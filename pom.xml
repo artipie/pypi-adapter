@@ -31,16 +31,16 @@ SOFTWARE.
     </parent>
     <groupId>com.artipie</groupId>
     <artifactId>pypi-adapter</artifactId>
-    <version>0.1</version>
+    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>pypi-files</name>
     <description>Turns your files/objects into NPM artifacts</description>
-    <url>https://github.com/yegor256/pypi-files</url>
+    <url>https://github.com/artipie/pypi-adapter</url>
     <inceptionYear>2019</inceptionYear>
     <licenses>
         <license>
             <name>MIT</name>
-            <url>https://github.com/yegor256/pypi-files/blob/master/LICENSE.txt</url>
+            <url>https://github.com/artipie/pypi-adapter/blob/master/LICENSE.txt</url>
         </license>
     </licenses>
     <developers>
@@ -77,50 +77,11 @@ SOFTWARE.
         </site>
     </distributionManagement>
     <dependencies>
-        <dependency>
-            <groupId>javax.json</groupId>
-            <artifactId>javax.json-api</artifactId>
-            <version>${javax.json.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>javax.json</artifactId>
-            <version>${javax.json.version}</version>
-        </dependency>
         <!-- Test only dependencies  -->
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-core</artifactId>
-            <version>${vertx.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-web</artifactId>
-            <version>${vertx.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.reactivex.rxjava2</groupId>
-            <artifactId>rxjava</artifactId>
-            <version>2.2.12</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-rx-java2</artifactId>
-            <version>${vertx.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.21</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.jcabi</groupId>
-            <artifactId>jcabi-matchers</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -129,8 +90,8 @@ SOFTWARE.
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>1.11</source>
+                    <target>1.11</target>
                 </configuration>
             </plugin>
         </plugins>

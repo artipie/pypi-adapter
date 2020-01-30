@@ -1,13 +1,11 @@
 architects:
   - yegor256
   - Sammers21
+  - Guseyn
 assets:
   settings.xml: yegor256/home#assets/rpm-files/settings.xml
   pubring.gpg: yegor256/home#assets/pubring.gpg
   secring.gpg: yegor256/home#assets/secring.gpg
-env:
-  MAVEN_OPTS: -XX:MaxPermSize=256m -Xmx1g
-  JAVA_OPTS: -XX:MaxPermSize=256m -Xmx1g
 install: |
   sudo gem install pdd
   sudo gem install xcop

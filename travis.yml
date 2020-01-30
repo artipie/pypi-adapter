@@ -1,4 +1,6 @@
 language: java
+jdk:
+  - openjdk11
 sudo: true
 dist: bionic
 addons:
@@ -18,11 +20,6 @@ install:
   - gem install xcop
 script:
   - set -e
-  - JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
   - mvn clean install -Pqulice --errors --batch-mode
   - mvn clean
   - pdd -f /dev/null
-env:
-  global:
-    - MAVEN_OPTS="-Xmx256m"
-    - JAVA_OPTS="-Xmx256m"
