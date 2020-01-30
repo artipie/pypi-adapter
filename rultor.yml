@@ -1,0 +1,24 @@
+architects:
+  - yegor256
+  - Sammers21
+  - Guseyn
+assets:
+  settings.xml: yegor256/home#assets/rpm-files/settings.xml
+  pubring.gpg: yegor256/home#assets/pubring.gpg
+  secring.gpg: yegor256/home#assets/secring.gpg
+install: |
+  sudo gem install pdd
+  sudo gem install xcop
+merge:
+  script: |
+    pdd -f /dev/null
+    mvn clean install -Pqulice --errors --settings ../settings.xml
+deploy:
+  script: |
+    echo There is nothing to deploy
+    exit 1
+release:
+  script: |-
+    mvn versions:set "-DnewVersion=${tag}"
+    git commit -am "${tag}"
+    mvn clean deploy -Prpm -Psonatype -Pqulice --errors --settings ../settings.xml
