@@ -55,3 +55,5 @@ setup(
         'https://myname:mypass@example.com/pypi/packages/'
     ])
 ```
+
+You can find sample files in the [test resources](https://github.com/artipie/pypi-adapter/tree/master/src/test/resources/simple-pypi-project)
