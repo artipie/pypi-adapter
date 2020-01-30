@@ -22,3 +22,38 @@ $ mvn clean install -Pqulice
 ```
 
 To avoid build errors use Maven 3.2+.
+
+## How to use
+
+For uploading using pip one must create a valid ~/.pypirc file:
+
+```
+[distutils]
+index-servers = example
+
+[example]
+repository = https://example.com/pypi
+username = myname
+password = mypass
+```
+
+For installing packages one needs to add the following section to .pip/pip.conf
+
+```
+[global]
+extra-index-url = https://myname:mypass@example.com/pypi/simple
+```
+
+For using a private server with setuptools unittesting you need to add the following to your setup.py:
+
+```
+from setuptools import setup
+
+setup(
+    ...
+    dependency_links=[
+        'https://myname:mypass@example.com/pypi/packages/'
+    ])
+```
+
+You can find sample files in the [test resources](https://github.com/artipie/pypi-adapter/tree/master/src/test/resources/simple-pypi-project)
