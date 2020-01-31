@@ -10,6 +10,24 @@
 [![Hits-of-Code](https://hitsofcode.com/github/artipie/pypi-adapter)](https://hitsofcode.com/view/github/artipie/pypi-adapter)
 [![Maven Central](https://img.shields.io/maven-central/v/com.artipie/pypi-adapter.svg)](https://maven-badges.herokuapp.com/maven-central/com.artipie/npm-adapter)
 
+## PYPI repository API and file structure
+
+PYPI repository API is explained by [PEP-503](https://www.python.org/dev/peps/pep-0503/).
+The repository root `/` API must return a valid HTML5 page with a single anchor element per project in the repository:
+```html
+<!DOCTYPE html>
+<html>
+  <body>
+    <a href="/frob/">frob</a>
+    <a href="/spamspamspam/">spamspamspam</a>
+  </body>
+</html>
+```
+
+These links may be helpful:
+ - Simple repository layout https://packaging.python.org/guides/hosting-your-own-index/
+ - Repository API https://www.python.org/dev/peps/pep-0503/
+
 ## How to contribute
 
 Fork repository, make changes, send us a pull request. We will review
