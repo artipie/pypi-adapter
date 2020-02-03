@@ -41,37 +41,59 @@ $ mvn clean install -Pqulice
 
 To avoid build errors use Maven 3.2+.
 
-## How to use
+## How it works
 
-For uploading using pip one must create a valid ~/.pypirc file:
+Follow these instructions: [https://packaging.python.org/tutorials/packaging-projects/](https://packaging.python.org/tutorials/packaging-projects/)
+
+1. For uploading using pip one must create a valid ~/.pypirc file:
 
 ```
 [distutils]
-index-servers = example
+index-servers=
+    testpypi
 
-[example]
-repository = https://example.com/pypi
-username = myname
-password = mypass
+[testpypi]
+repository: http://localhost:8080/
+username: testuser
+password: 123
 ```
 
-For installing packages one needs to add the following section to .pip/pip.conf
+Then run the commands:
 
 ```
-[global]
-extra-index-url = https://myname:mypass@example.com/pypi/simple
+python setup.py sdist
 ```
 
-For using a private server with setuptools unittesting you need to add the following to your setup.py:
+Where `setup.py` looks smth like:
 
-```
+```python
+#!/usr/bin/env python
+
 from setuptools import setup
 
 setup(
-    ...
-    dependency_links=[
-        'https://myname:mypass@example.com/pypi/packages/'
-    ])
+    name='test',
+    version='1.0',
+    description='Python Distribution Utilities',
+    packages=[ ],
+    dependency_links=[ ]
+)
 ```
 
-You can find sample files in the [test resources](https://github.com/artipie/pypi-adapter/tree/master/src/test/resources/simple-pypi-project)
+You have to have running server on  `http://localhost:8080`.
+
+Then install `pip install twine`
+
+And then run the command: `twine upload --repository testpypi dist/*`
+
+Response:
+
+```
+
+```
+
+2. For installing run the command
+
+```python
+pip install -i http://localhost:8080/ --upgrade example-pkg-YOUR-USERNAME-HERE
+```
