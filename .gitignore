@@ -3,3 +3,11 @@ target/
 *.iml
 .DS_Store
 node_modules/
+/src/test/resources/packaging_tutorial/example_pkg/server/
+/src/test/resources/packaging_tutorial/example_pkg/example_pkg_YOUR_USERNAME_HERE.egg-info/dependency_links.txt
+/src/test/resources/packaging_tutorial/example_pkg/example_pkg_YOUR_USERNAME_HERE.egg-info/PKG-INFO
+/src/test/resources/packaging_tutorial/example_pkg/example_pkg_YOUR_USERNAME_HERE.egg-info/
+/src/test/resources/packaging_tutorial/example_pkg/dist/example-pkg-YOUR-USERNAME-HERE-0.0.1.tar.gz
+/src/test/resources/packaging_tutorial/example_pkg/example_pkg_YOUR_USERNAME_HERE.egg-info/SOURCES.txt
+/src/test/resources/packaging_tutorial/example_pkg/dist/
+/src/test/resources/packaging_tutorial/example_pkg/example_pkg_YOUR_USERNAME_HERE.egg-info/top_level.txt
