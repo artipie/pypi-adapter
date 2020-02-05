@@ -25,9 +25,40 @@
 package com.artipie.pypi;
 
 /**
- * MainTest (just mock test file).
+ * PackageMeta.
  *
  * @since 0.1
  */
-public class MainTest {
+public final class PackageMeta implements Meta {
+    /**
+     * Name of package.
+     */
+    private final String name;
+
+    /**
+     * Version of package.
+     */
+    private final String version;
+
+    /**
+     * Pattern of html presentation of package meta info.
+     */
+    private final String pattern;
+
+    /**
+     * Ctor.
+     *
+     * @param name Name of Package.
+     * @param version Version of Package.
+     */
+    public PackageMeta(final String name, final String version) {
+        this.name = name;
+        this.version = version;
+        this.pattern = "<tr><td><a href=\"%s-%s.tar.gz\">%s-%s.tar.gz</a></td></tr>";
+    }
+
+    @Override
+    public String html() {
+        return String.format(this.pattern, this.name, this.version, this.name, this.version);
+    }
 }

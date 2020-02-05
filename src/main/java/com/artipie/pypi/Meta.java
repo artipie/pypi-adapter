@@ -25,9 +25,14 @@
 package com.artipie.pypi;
 
 /**
- * Main (just mock file).
+ * Meta.
  *
  * @since 0.1
  */
-public class Main {
+public interface Meta {
+    /**
+     * Html as string.
+     * @return Html string of meta data.
+     */
+    String html();
 }
