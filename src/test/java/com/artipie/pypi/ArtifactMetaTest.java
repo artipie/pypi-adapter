@@ -24,34 +24,29 @@
 
 package com.artipie.pypi;
 
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
+import org.junit.Test;
+
 /**
- * PackageMeta.
+ * ArtifactMetaTest.
  *
  * @since 0.1
  */
-public final class PackageMeta implements Meta {
-    /**
-     * Name of artifact.
-     */
-    private final String name;
+public class ArtifactMetaTest {
 
     /**
-     * Pattern of html presentation of package meta info.
-     */
-    private final String pattern;
-
-    /**
-     * Ctor.
+     * Simple test.
      *
-     * @param name Name of Package.
+     * @checkstyle LineLengthCheck (8 lines).
      */
-    public PackageMeta(final String name) {
-        this.name = name;
-        this.pattern = "<tr><td><a href=\"%s\">%s</a></td></tr>";
-    }
-
-    @Override
-    public String html() {
-        return String.format(this.pattern, this.name, this.name);
+    @Test
+    public void simple() {
+        MatcherAssert.assertThat(
+            new ArtifactMeta("name", "v1.0.0").html(),
+            CoreMatchers.equalTo(
+                "<tr><td><a href=\"name-v1.0.0.tar.gz\">name-v1.0.0.tar.gz</a></td></tr>"
+            )
+        );
     }
 }

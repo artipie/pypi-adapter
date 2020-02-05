@@ -25,15 +25,20 @@
 package com.artipie.pypi;
 
 /**
- * PackageMeta.
+ * ArtifactMeta.
  *
  * @since 0.1
  */
-public final class PackageMeta implements Meta {
+public final class ArtifactMeta implements Meta {
     /**
      * Name of artifact.
      */
     private final String name;
+
+    /**
+     * Version of artifact.
+     */
+    private final String version;
 
     /**
      * Pattern of html presentation of package meta info.
@@ -43,15 +48,17 @@ public final class PackageMeta implements Meta {
     /**
      * Ctor.
      *
-     * @param name Name of Package.
+     * @param name Name of artifact.
+     * @param version Version of artifact.
      */
-    public PackageMeta(final String name) {
+    public ArtifactMeta(final String name, final String version) {
         this.name = name;
-        this.pattern = "<tr><td><a href=\"%s\">%s</a></td></tr>";
+        this.version = version;
+        this.pattern = "<tr><td><a href=\"%s-%s.tar.gz\">%s-%s.tar.gz</a></td></tr>";
     }
 
     @Override
     public String html() {
-        return String.format(this.pattern, this.name, this.name);
+        return String.format(this.pattern, this.name, this.version, this.name, this.version);
     }
 }
