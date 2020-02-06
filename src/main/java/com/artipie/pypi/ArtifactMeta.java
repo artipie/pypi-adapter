@@ -52,6 +52,16 @@ public final class ArtifactMeta implements Meta {
      * @param version Version of artifact.
      */
     public ArtifactMeta(final String name, final String version) {
+        this(name, version, "<tr><td><a href=\"%s-%s.tar.gz\">%s-%s.tar.gz</a></td></tr>");
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param name Name of artifact.
+     * @param version Version of artifact.
+     */
+    public ArtifactMeta(final String name, final String version, final String pattern) {
         this.name = name;
         this.version = version;
         this.pattern = "<tr><td><a href=\"%s-%s.tar.gz\">%s-%s.tar.gz</a></td></tr>";

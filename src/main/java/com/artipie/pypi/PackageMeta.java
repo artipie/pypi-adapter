@@ -46,8 +46,18 @@ public final class PackageMeta implements Meta {
      * @param name Name of Package.
      */
     public PackageMeta(final String name) {
+        this(name, "<tr><td><a href=\"%s\">%s</a></td></tr>");
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param name Name of Package.
+     * @param pattern Pattern for meta
+     */
+    public PackageMeta(final String name, final  String pattern) {
         this.name = name;
-        this.pattern = "<tr><td><a href=\"%s\">%s</a></td></tr>";
+        this.pattern = pattern;
     }
 
     @Override
