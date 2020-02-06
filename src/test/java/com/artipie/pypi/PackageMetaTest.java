@@ -24,7 +24,7 @@
 
 package com.artipie.pypi;
 
-import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 
@@ -44,7 +44,7 @@ public class PackageMetaTest {
     public void simple() {
         MatcherAssert.assertThat(
             new PackageMeta("name").html(),
-            CoreMatchers.equalTo(
+            Matchers.equalTo(
                 "<tr><td><a href=\"name\">name</a></td></tr>"
             )
         );

@@ -24,7 +24,7 @@
 
 package com.artipie.pypi;
 
-import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 
@@ -44,7 +44,7 @@ public class ArtifactMetaTest {
     public void simple() {
         MatcherAssert.assertThat(
             new ArtifactMeta("name", "v1.0.0").html(),
-            CoreMatchers.equalTo(
+            Matchers.equalTo(
                 "<tr><td><a href=\"name-v1.0.0.tar.gz\">name-v1.0.0.tar.gz</a></td></tr>"
             )
         );

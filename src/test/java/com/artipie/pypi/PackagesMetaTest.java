@@ -24,7 +24,7 @@
 
 package com.artipie.pypi;
 
-import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 
@@ -45,7 +45,7 @@ public class PackagesMetaTest {
         final PackagesMeta meta = new PackagesMeta();
         MatcherAssert.assertThat(
             meta.update(new ArtifactMeta("artifact", "v1.0.0")).html(),
-            CoreMatchers.equalTo(
+            Matchers.equalTo(
                 "<html>\n <head></head>\n <body>\n  <table>\n   <thead>\n    <tr>\n     <th>Filename</th>\n    </tr>\n   </thead>\n   <tbody>\n    <tr>\n     <td><a href=\"artifact-v1.0.0.tar.gz\">artifact-v1.0.0.tar.gz</a></td>\n    </tr>\n   </tbody>\n  </table>\n </body>\n</html>"
             )
         );
@@ -61,7 +61,7 @@ public class PackagesMetaTest {
         final PackagesMeta meta = new PackagesMeta();
         MatcherAssert.assertThat(
             meta.update(new PackageMeta("package")).html(),
-            CoreMatchers.equalTo(
+            Matchers.equalTo(
                 "<html>\n <head></head>\n <body>\n  <table>\n   <thead>\n    <tr>\n     <th>Filename</th>\n    </tr>\n   </thead>\n   <tbody>\n    <tr>\n     <td><a href=\"package\">package</a></td>\n    </tr>\n   </tbody>\n  </table>\n </body>\n</html>"
             )
         );
