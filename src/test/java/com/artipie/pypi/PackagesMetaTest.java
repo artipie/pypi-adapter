@@ -46,7 +46,7 @@ public class PackagesMetaTest {
         MatcherAssert.assertThat(
             meta.update(new ArtifactMeta("artifact", "v1.0.0")).html(),
             Matchers.equalTo(
-                "<html>\n <head></head>\n <body>\n  <table>\n   <thead>\n    <tr>\n     <th>Filename</th>\n    </tr>\n   </thead>\n   <tbody>\n    <tr>\n     <td><a href=\"artifact-v1.0.0.tar.gz\">artifact-v1.0.0.tar.gz</a></td>\n    </tr>\n   </tbody>\n  </table>\n </body>\n</html>"
+                "<html><head></head><body><table><thead><tr><th>Filename</th></tr></thead><tbody><tr><td><a href=\"artifact-v1.0.0.tar.gz\">artifact-v1.0.0.tar.gz</a></td></tr></tbody></table></body></html>"
             )
         );
     }
@@ -62,7 +62,24 @@ public class PackagesMetaTest {
         MatcherAssert.assertThat(
             meta.update(new PackageMeta("package")).html(),
             Matchers.equalTo(
-                "<html>\n <head></head>\n <body>\n  <table>\n   <thead>\n    <tr>\n     <th>Filename</th>\n    </tr>\n   </thead>\n   <tbody>\n    <tr>\n     <td><a href=\"package\">package</a></td>\n    </tr>\n   </tbody>\n  </table>\n </body>\n</html>"
+                "<html><head></head><body><table><thead><tr><th>Filename</th></tr></thead><tbody><tr><td><a href=\"package\">package</a></td></tr></tbody></table></body></html>"
+            )
+        );
+    }
+
+    /**
+     * Simple test for artifact meta.
+     *
+     * @checkstyle LineLengthCheck (9 lines).
+     */
+    @Test
+    public void packageDuplicationTest() {
+        final String html = "<html><head></head><body><table><thead><tr><th>Filename</th></tr></thead><tbody><tr><td><a href=\"single-package\">single-package</a></td></tr></tbody></table></body></html>";
+        final PackagesMeta meta = new PackagesMeta(html);
+        MatcherAssert.assertThat(
+            meta.update(new PackageMeta("single-package")).html(),
+            Matchers.equalTo(
+                html
             )
         );
     }

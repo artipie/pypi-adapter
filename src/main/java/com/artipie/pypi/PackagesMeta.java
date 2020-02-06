@@ -24,6 +24,9 @@
 
 package com.artipie.pypi;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -62,12 +65,28 @@ public final class PackagesMeta implements LiveMeta {
     public Meta update(final Meta meta) {
         final Document doc = Jsoup.parse(this.content);
         final Element tbody = doc.getElementsByTag("tbody").get(0);
-        tbody.append(meta.html());
-        return new PackagesMeta(doc.html());
+        final List<Element> trs = new ArrayList<>(tbody.getElementsByTag("tr"));
+        final Optional<Element> found = trs.stream().filter(
+            tr -> meta.html().equals(normalizeHtmlString(tr.outerHtml()))
+        ).findFirst();
+        if (found.isEmpty()) {
+            tbody.append(meta.html());
+        }
+        return new PackagesMeta(normalizeHtmlString(doc.html()));
     }
 
     @Override
     public String html() {
         return this.content;
+    }
+
+    /**
+     * Minimize html string by removing space symbols.
+     *
+     * @param html HTML string.
+     * @return Minimized HTML string.
+     */
+    private static String normalizeHtmlString(final String html) {
+        return html.replaceAll(">\\s+", ">").trim();
     }
 }
