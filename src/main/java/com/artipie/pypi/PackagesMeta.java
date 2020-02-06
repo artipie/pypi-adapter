@@ -24,44 +24,50 @@
 
 package com.artipie.pypi;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
 /**
- * PackageMeta.
+ * PackagesMeta.
  *
  * @since 0.1
  */
-public final class PackageMeta implements Meta {
-    /**
-     * Name of artifact.
-     */
-    private final String name;
+public final class PackagesMeta implements LiveMeta {
 
     /**
-     * Pattern of html presentation of package meta info.
+     * Content of packages meta.
      */
-    private final String pattern;
+    private final String content;
 
     /**
      * Ctor.
      *
-     * @param name Name of Package.
+     * @checkstyle LineLengthCheck (3 lines).
      */
-    public PackageMeta(final String name) {
-        this(name, "<tr><td><a href=\"%s\">%s</a></td></tr>");
+    public PackagesMeta() {
+        this("<html><body><table><thead><tr><th>Filename</th></tr></thead><tbody></tbody></table></body></html>");
     }
 
     /**
      * Ctor.
      *
-     * @param name Name of Package.
-     * @param pattern Pattern for meta
+     * @param content Content of packages meta
      */
-    public PackageMeta(final String name, final  String pattern) {
-        this.name = name;
-        this.pattern = pattern;
+    public PackagesMeta(final String content) {
+        this.content = content;
+    }
+
+    @Override
+    public Meta update(final Meta meta) {
+        final Document doc = Jsoup.parse(this.content);
+        final Element tbody = doc.getElementsByTag("tbody").get(0);
+        tbody.append(meta.html());
+        return new PackagesMeta(doc.html());
     }
 
     @Override
     public String html() {
-        return String.format(this.pattern, this.name, this.name);
+        return this.content;
     }
 }

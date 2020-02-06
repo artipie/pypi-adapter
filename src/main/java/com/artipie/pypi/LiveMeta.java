@@ -25,43 +25,16 @@
 package com.artipie.pypi;
 
 /**
- * PackageMeta.
+ * LiveMeta.
  *
  * @since 0.1
  */
-public final class PackageMeta implements Meta {
+public interface LiveMeta extends Meta {
     /**
-     * Name of artifact.
-     */
-    private final String name;
-
-    /**
-     * Pattern of html presentation of package meta info.
-     */
-    private final String pattern;
-
-    /**
-     * Ctor.
+     * Updates content.
      *
-     * @param name Name of Package.
+     * @param meta Meta to update.
+     * @return Updated meta.
      */
-    public PackageMeta(final String name) {
-        this(name, "<tr><td><a href=\"%s\">%s</a></td></tr>");
-    }
-
-    /**
-     * Ctor.
-     *
-     * @param name Name of Package.
-     * @param pattern Pattern for meta
-     */
-    public PackageMeta(final String name, final  String pattern) {
-        this.name = name;
-        this.pattern = pattern;
-    }
-
-    @Override
-    public String html() {
-        return String.format(this.pattern, this.name, this.name);
-    }
+    Meta update(Meta meta);
 }
