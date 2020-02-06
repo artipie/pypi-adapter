@@ -60,6 +60,7 @@ public final class ArtifactMeta implements Meta {
      *
      * @param name Name of artifact.
      * @param version Version of artifact.
+     * @param pattern Pattern of meta.
      */
     public ArtifactMeta(final String name, final String version, final String pattern) {
         this.name = name;
