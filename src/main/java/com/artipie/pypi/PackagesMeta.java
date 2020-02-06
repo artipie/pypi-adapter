@@ -26,7 +26,6 @@ package com.artipie.pypi;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -66,10 +65,10 @@ public final class PackagesMeta implements LiveMeta {
         final Document doc = Jsoup.parse(this.content);
         final Element tbody = doc.getElementsByTag("tbody").get(0);
         final List<Element> trs = new ArrayList<>(tbody.getElementsByTag("tr"));
-        final Optional<Element> found = trs.stream().filter(
+        final boolean found = trs.stream().anyMatch(
             tr -> meta.html().equals(normalizedHtmlString(tr.outerHtml()))
-        ).findFirst();
-        if (found.isEmpty()) {
+        );
+        if (!found) {
             tbody.append(meta.html());
         }
         return new PackagesMeta(normalizedHtmlString(doc.html()));
