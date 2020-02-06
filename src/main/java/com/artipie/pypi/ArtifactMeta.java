@@ -64,7 +64,7 @@ public final class ArtifactMeta implements Meta {
     public ArtifactMeta(final String name, final String version, final String pattern) {
         this.name = name;
         this.version = version;
-        this.pattern = "<tr><td><a href=\"%s-%s.tar.gz\">%s-%s.tar.gz</a></td></tr>";
+        this.pattern = pattern;
     }
 
     @Override
