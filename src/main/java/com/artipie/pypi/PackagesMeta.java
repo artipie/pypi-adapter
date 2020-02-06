@@ -67,12 +67,12 @@ public final class PackagesMeta implements LiveMeta {
         final Element tbody = doc.getElementsByTag("tbody").get(0);
         final List<Element> trs = new ArrayList<>(tbody.getElementsByTag("tr"));
         final Optional<Element> found = trs.stream().filter(
-            tr -> meta.html().equals(normalizeHtmlString(tr.outerHtml()))
+            tr -> meta.html().equals(normalizedHtmlString(tr.outerHtml()))
         ).findFirst();
         if (found.isEmpty()) {
             tbody.append(meta.html());
         }
-        return new PackagesMeta(normalizeHtmlString(doc.html()));
+        return new PackagesMeta(normalizedHtmlString(doc.html()));
     }
 
     @Override
@@ -86,7 +86,7 @@ public final class PackagesMeta implements LiveMeta {
      * @param html HTML string.
      * @return Minimized HTML string.
      */
-    private static String normalizeHtmlString(final String html) {
+    private static String normalizedHtmlString(final String html) {
         return html.replaceAll(">\\s+", ">").trim();
     }
 }
