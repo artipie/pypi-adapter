@@ -24,6 +24,10 @@
 
 package com.artipie.pypi;
 
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import java.util.concurrent.CompletableFuture;
+
 /**
  * LiveMeta.
  *
@@ -37,4 +41,13 @@ public interface LiveMeta extends Meta {
      * @return Updated meta.
      */
     Meta update(Meta meta);
+
+    /**
+     * Saves itself into abstract storage.
+     *
+     * @param storage Storage which is for saving the meta.
+     * @param key Key of the meta in the storage.
+     * @return Future of save operation.
+     */
+    CompletableFuture<Void> save(Storage storage, Key key);
 }
