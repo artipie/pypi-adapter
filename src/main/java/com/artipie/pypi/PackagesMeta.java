@@ -24,11 +24,18 @@
 
 package com.artipie.pypi;
 
+import com.artipie.asto.ByteArray;
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import io.reactivex.rxjava3.core.Flowable;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.reactivestreams.FlowAdapters;
 
 /**
  * PackagesMeta.
@@ -72,6 +79,19 @@ public final class PackagesMeta implements LiveMeta {
             tbody.append(meta.html());
         }
         return new PackagesMeta(normalizedHtmlString(doc.html()));
+    }
+
+    @Override
+    public CompletableFuture<Void> save(final Storage storage, final Key key) {
+        return storage.save(
+            key, FlowAdapters.toFlowPublisher(
+                Flowable.fromArray(
+                    new ByteArray(
+                        this.content.getBytes(StandardCharsets.UTF_8)
+                    ).boxedBytes()
+                )
+            )
+        );
     }
 
     @Override
