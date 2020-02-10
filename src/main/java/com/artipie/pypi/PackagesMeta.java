@@ -24,18 +24,14 @@
 
 package com.artipie.pypi;
 
-import com.artipie.asto.ByteArray;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import io.reactivex.rxjava3.core.Flowable;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.reactivestreams.FlowAdapters;
 
 /**
  * PackagesMeta.
@@ -47,7 +43,7 @@ public final class PackagesMeta implements LiveMeta {
     /**
      * Content of packages meta.
      */
-    private final String content;
+    private final Flow<Byte> content;
 
     /**
      * Ctor.
@@ -64,12 +60,12 @@ public final class PackagesMeta implements LiveMeta {
      * @param content Content of packages meta
      */
     public PackagesMeta(final String content) {
-        this.content = content;
+        this.content = new ByteFlow(content);
     }
 
     @Override
     public Meta update(final Meta meta) {
-        final Document doc = Jsoup.parse(this.content);
+        final Document doc = Jsoup.parse(this.content.toString());
         final Element tbody = doc.getElementsByTag("tbody").get(0);
         final List<Element> trs = new ArrayList<>(tbody.getElementsByTag("tr"));
         final boolean found = trs.stream().anyMatch(
@@ -83,20 +79,12 @@ public final class PackagesMeta implements LiveMeta {
 
     @Override
     public CompletableFuture<Void> save(final Storage storage, final Key key) {
-        return storage.save(
-            key, FlowAdapters.toFlowPublisher(
-                Flowable.fromArray(
-                    new ByteArray(
-                        this.content.getBytes(StandardCharsets.UTF_8)
-                    ).boxedBytes()
-                )
-            )
-        );
+        return storage.save(key, this.content.value());
     }
 
     @Override
     public String html() {
-        return this.content;
+        return this.content.toString();
     }
 
     /**
