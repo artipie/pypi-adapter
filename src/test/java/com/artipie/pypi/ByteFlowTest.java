@@ -39,7 +39,7 @@ public class ByteFlowTest {
      * To string test.
      */
     @Test
-    public void string() {
+    public void toStringWorks() {
         final String string = "string";
         MatcherAssert.assertThat(
             new ByteFlow(string).toString(),
