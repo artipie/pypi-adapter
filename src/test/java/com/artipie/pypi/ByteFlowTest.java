@@ -24,29 +24,31 @@
 
 package com.artipie.pypi;
 
+import java.nio.ByteBuffer;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
 /**
- * ArtifactMetaTest.
+ * ByteFlowTest.
  *
  * @since 0.1
  */
-public class ArtifactMetaTest {
-
+public class ByteFlowTest {
     /**
-     * Simple test.
-     *
-     * @checkstyle LineLengthCheck (8 lines).
+     * To string test.
      */
     @Test
-    public void simple() {
+    public void toStringWorks() {
+        final String string = "string";
         MatcherAssert.assertThat(
-            new ArtifactMeta("name-1.0.0").html(),
-            Matchers.equalTo(
-                "<tr><td><a href=\"name-1.0.0.tar.gz\">name-1.0.0.tar.gz</a></td></tr>"
-            )
+            new ByteFlow(string).toString(),
+            Matchers.equalTo(string)
+        );
+        final byte data = 0x02;
+        MatcherAssert.assertThat(
+            new ByteFlow(ByteBuffer.wrap(new byte[]{data})).toString(),
+            Matchers.equalTo("\u0002")
         );
     }
 }

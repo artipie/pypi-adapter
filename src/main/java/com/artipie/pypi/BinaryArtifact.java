@@ -24,29 +24,42 @@
 
 package com.artipie.pypi;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Test;
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * ArtifactMetaTest.
+ * BinaryArtifact.
  *
  * @since 0.1
  */
-public class ArtifactMetaTest {
+public final class BinaryArtifact implements Artifact {
 
     /**
-     * Simple test.
-     *
-     * @checkstyle LineLengthCheck (8 lines).
+     * Name of artifact.
      */
-    @Test
-    public void simple() {
-        MatcherAssert.assertThat(
-            new ArtifactMeta("name-1.0.0").html(),
-            Matchers.equalTo(
-                "<tr><td><a href=\"name-1.0.0.tar.gz\">name-1.0.0.tar.gz</a></td></tr>"
-            )
-        );
+    private final String name;
+
+    /**
+     * Content of artifact.
+     */
+    private final Flow<ByteBuffer> content;
+
+    /**
+     * Ctor.
+     *
+     * @param name Name of artifact.
+     * @param content Content of artifact.
+     */
+    public BinaryArtifact(final String name, final String content) {
+        this.name = name;
+        this.content = new ByteFlow(content);
+    }
+
+    @Override
+    public CompletableFuture<Void> save(final Storage storage) {
+        final String pkgname = this.name.split("-\\d.\\d.\\d.tar.gz")[0];
+        return storage.save(new Key.From(pkgname, this.name), this.content.value());
     }
 }

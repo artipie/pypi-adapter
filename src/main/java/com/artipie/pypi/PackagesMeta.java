@@ -26,6 +26,7 @@ package com.artipie.pypi;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +44,7 @@ public final class PackagesMeta implements LiveMeta {
     /**
      * Content of packages meta.
      */
-    private final Flow<Byte> content;
+    private final Flow<ByteBuffer> content;
 
     /**
      * Ctor.

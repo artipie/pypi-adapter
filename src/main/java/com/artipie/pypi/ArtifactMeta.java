@@ -36,11 +36,6 @@ public final class ArtifactMeta implements Meta {
     private final String name;
 
     /**
-     * Version of artifact.
-     */
-    private final String version;
-
-    /**
      * Pattern of html presentation of package meta info.
      */
     private final String pattern;
@@ -49,27 +44,24 @@ public final class ArtifactMeta implements Meta {
      * Ctor.
      *
      * @param name Name of artifact.
-     * @param version Version of artifact.
      */
-    public ArtifactMeta(final String name, final String version) {
-        this(name, version, "<tr><td><a href=\"%s-%s.tar.gz\">%s-%s.tar.gz</a></td></tr>");
+    public ArtifactMeta(final String name) {
+        this(name, "<tr><td><a href=\"%s.tar.gz\">%s.tar.gz</a></td></tr>");
     }
 
     /**
      * Ctor.
      *
      * @param name Name of artifact.
-     * @param version Version of artifact.
      * @param pattern Pattern of meta.
      */
-    public ArtifactMeta(final String name, final String version, final String pattern) {
+    public ArtifactMeta(final String name, final String pattern) {
         this.name = name;
-        this.version = version;
         this.pattern = pattern;
     }
 
     @Override
     public String html() {
-        return String.format(this.pattern, this.name, this.version, this.name, this.version);
+        return String.format(this.pattern, this.name, this.name);
     }
 }

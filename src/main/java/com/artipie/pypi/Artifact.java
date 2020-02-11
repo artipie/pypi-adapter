@@ -24,29 +24,20 @@
 
 package com.artipie.pypi;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Test;
+import com.artipie.asto.Storage;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * ArtifactMetaTest.
+ * Artifact.
  *
  * @since 0.1
  */
-public class ArtifactMetaTest {
-
+public interface Artifact {
     /**
-     * Simple test.
+     * Saves itself into abstract storage.
      *
-     * @checkstyle LineLengthCheck (8 lines).
+     * @param storage Storage which is for saving the artifact.
+     * @return Future of save operation.
      */
-    @Test
-    public void simple() {
-        MatcherAssert.assertThat(
-            new ArtifactMeta("name-1.0.0").html(),
-            Matchers.equalTo(
-                "<tr><td><a href=\"name-1.0.0.tar.gz\">name-1.0.0.tar.gz</a></td></tr>"
-            )
-        );
-    }
+    CompletableFuture<Void> save(Storage storage);
 }
