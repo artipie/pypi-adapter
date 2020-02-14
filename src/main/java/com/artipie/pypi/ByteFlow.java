@@ -24,8 +24,9 @@
 
 package com.artipie.pypi;
 
-import com.artipie.asto.ByteArray;
-import io.reactivex.rxjava3.core.Flowable;
+import com.artipie.asto.Remaining;
+import io.reactivex.Flowable;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import org.reactivestreams.FlowAdapters;
 
@@ -34,11 +35,11 @@ import org.reactivestreams.FlowAdapters;
  *
  * @since 0.1
  */
-public final class ByteFlow implements Flow<Byte> {
+public final class ByteFlow implements Flow<ByteBuffer> {
     /**
      * Data for flow.
      */
-    private final String data;
+    private final ByteBuffer data;
 
     /**
      * Ctor.
@@ -46,22 +47,27 @@ public final class ByteFlow implements Flow<Byte> {
      * @param data Data for flow.
      */
     public ByteFlow(final String data) {
+        this(ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param data Data for flow.
+     */
+    public ByteFlow(final ByteBuffer data) {
         this.data = data;
     }
 
     @Override
-    public java.util.concurrent.Flow.Publisher<Byte> value() {
+    public java.util.concurrent.Flow.Publisher<ByteBuffer> value() {
         return FlowAdapters.toFlowPublisher(
-            Flowable.fromArray(
-                new ByteArray(
-                    this.data.getBytes(StandardCharsets.UTF_8)
-                ).boxedBytes()
-            )
+            Flowable.fromArray(this.data)
         );
     }
 
     @Override
     public String toString() {
-        return this.data;
+        return new String(new Remaining(this.data).bytes());
     }
 }

@@ -44,9 +44,9 @@ public class PackagesMetaTest {
     public void artifactTest() {
         final PackagesMeta meta = new PackagesMeta();
         MatcherAssert.assertThat(
-            meta.update(new ArtifactMeta("artifact", "v1.0.0")).html(),
+            meta.update(new ArtifactMeta("artifact-1.0.0")).html(),
             Matchers.equalTo(
-                "<html><head></head><body><table><thead><tr><th>Filename</th></tr></thead><tbody><tr><td><a href=\"artifact-v1.0.0.tar.gz\">artifact-v1.0.0.tar.gz</a></td></tr></tbody></table></body></html>"
+                "<html><head></head><body><table><thead><tr><th>Filename</th></tr></thead><tbody><tr><td><a href=\"artifact-1.0.0.tar.gz\">artifact-1.0.0.tar.gz</a></td></tr></tbody></table></body></html>"
             )
         );
     }
