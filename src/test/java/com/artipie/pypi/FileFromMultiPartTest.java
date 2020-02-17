@@ -24,7 +24,7 @@
 
 package com.artipie.pypi;
 
-import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.Flowable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Flow;
@@ -40,14 +40,11 @@ import org.reactivestreams.FlowAdapters;
  * @since 0.1
  * @checkstyle LocalFinalVariableNameCheck (200 lines).
  * @checkstyle ParameterNameCheck (200 lines).
+ * @checkstyle AppendCharacterWithChar (200 lines).
  */
 public class FileFromMultiPartTest {
     /**
      * Simple test.
-     *
-     * @checkstyle LocalFinalVariableNameCheck (200 lines).
-     * @checkstyle AssignmentInOperand (200 lines).
-     * @checkstyle AppendCharacterWithChar (200 lines).
      */
     @Test
     public void simple() throws IOException {

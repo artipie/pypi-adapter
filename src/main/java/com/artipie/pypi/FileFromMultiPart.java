@@ -24,7 +24,7 @@
 
 package com.artipie.pypi;
 
-import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.Flowable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -103,7 +103,7 @@ public final class FileFromMultiPart {
     }
 
     /**
-     * You can call it only after after calling method content.
+     * You can call it only after calling method content.
      *
      * @return Name of the file from the multipart.
      */

@@ -48,7 +48,7 @@ public class ByteBufferAsString {
     }
 
     /**
-     * Gets a string value from  ByteBuffer.
+     * Gets a string value from ByteBuffer.
      *
      * @return String from ByteBuffer.
      */
