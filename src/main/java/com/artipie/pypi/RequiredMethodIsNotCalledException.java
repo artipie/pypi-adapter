@@ -33,7 +33,7 @@ public class RequiredMethodIsNotCalledException extends RuntimeException {
     /**
      * Number: serialVersionUID.
      */
-    static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     /**
      * Ctor.
