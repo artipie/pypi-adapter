@@ -61,9 +61,7 @@ public final class ByteFlow implements Flow<ByteBuffer> {
 
     @Override
     public Publisher<ByteBuffer> value() {
-        return Flowable.fromPublisher(
-            Flowable.fromArray(this.data)
-        );
+        return Flowable.fromArray(this.data);
     }
 
     @Override
