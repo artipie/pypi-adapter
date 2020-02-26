@@ -27,7 +27,7 @@ package com.artipie.pypi;
 import java.nio.ByteBuffer;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * ByteFlowTest.
