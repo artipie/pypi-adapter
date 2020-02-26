@@ -24,6 +24,8 @@
 
 package com.artipie.pypi;
 
+import org.reactivestreams.Publisher;
+
 /**
  * Flow.
  *
@@ -36,5 +38,5 @@ public interface Flow<T> {
      *
      * @return Flow.
      */
-    java.util.concurrent.Flow.Publisher<T> value();
+    Publisher<T> value();
 }

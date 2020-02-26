@@ -28,7 +28,7 @@ import com.artipie.asto.Remaining;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import org.reactivestreams.FlowAdapters;
+import org.reactivestreams.Publisher;
 
 /**
  * ByteFlow.
@@ -60,8 +60,8 @@ public final class ByteFlow implements Flow<ByteBuffer> {
     }
 
     @Override
-    public java.util.concurrent.Flow.Publisher<ByteBuffer> value() {
-        return FlowAdapters.toFlowPublisher(
+    public Publisher<ByteBuffer> value() {
+        return Flowable.fromPublisher(
             Flowable.fromArray(this.data)
         );
     }
