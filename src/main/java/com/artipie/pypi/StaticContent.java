@@ -29,11 +29,9 @@ import com.artipie.asto.Storage;
 import com.artipie.http.Response;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
-import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import org.reactivestreams.Publisher;
 
 /**
  * StaticContent.
@@ -85,11 +83,6 @@ public final class StaticContent implements Resource {
                     }
                 )
             );
-    }
-
-    @Override
-    public Response put(final Publisher<ByteBuffer> body) {
-        return new RsWithStatus(RsStatus.METHOD_NOT_ALLOWED);
     }
 
     /**

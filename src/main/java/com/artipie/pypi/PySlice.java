@@ -70,12 +70,10 @@ public final class PySlice implements Slice {
         final RequestLineFrom request = new RequestLineFrom(line);
         final String path = request.uri().getPath();
         if (path.startsWith(this.base)) {
-            final Resource resource = this.resource(path.substring(this.base.length()));
+            final Resource resource = new StaticContent(path.substring(this.base.length()), this.storage);
             final RqMethod method = request.method();
             if (method.equals(RqMethod.GET)) {
                 response = resource.get();
-            } else if (method.equals(RqMethod.PUT)) {
-                response = resource.put(body);
             } else {
                 response = new RsWithStatus(RsStatus.METHOD_NOT_ALLOWED);
             }
@@ -83,15 +81,5 @@ public final class PySlice implements Slice {
             response = new RsWithStatus(RsStatus.NOT_FOUND);
         }
         return response;
-    }
-
-    /**
-     * Find resource by relative path.
-     *
-     * @param path Relative path.
-     * @return Resource found by path.
-     */
-    private Resource resource(final String path) {
-        return new StaticContent(path, this.storage);
     }
 }

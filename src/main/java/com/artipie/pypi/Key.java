@@ -24,18 +24,39 @@
 
 package com.artipie.pypi;
 
-import com.artipie.http.Response;
-
 /**
- * Resource.
+ * Key.
  *
  * @since 0.1
  */
-public interface Resource {
+public class Key {
+
     /**
-     * Serve GET method.
-     *
-     * @return Response to request.
+     * Resource path.
      */
-    Response get();
+    private final String path;
+
+    /**
+     * Ctor.
+     *
+     * @param path
+     */
+    public Key(final String path) {
+        this.path = path;
+    }
+
+    /**
+     * Value by key.
+     *
+     * @return value of key.
+     */
+    public com.artipie.asto.Key.From value() {
+        final String normalized;
+        if (this.path.charAt(0) == '/') {
+            normalized = this.path.substring(1);
+        } else {
+            normalized = this.path;
+        }
+        return new com.artipie.asto.Key.From(normalized);
+    }
 }
