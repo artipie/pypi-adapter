@@ -70,7 +70,9 @@ public final class PySlice implements Slice {
         final RequestLineFrom request = new RequestLineFrom(line);
         final String path = request.uri().getPath();
         if (path.startsWith(this.base)) {
-            final Resource resource = new StaticContent(path.substring(this.base.length()), this.storage);
+            final Resource resource = new StaticContent(
+                path.substring(this.base.length()), this.storage
+            );
             final RqMethod method = request.method();
             if (method.equals(RqMethod.GET)) {
                 response = resource.get();

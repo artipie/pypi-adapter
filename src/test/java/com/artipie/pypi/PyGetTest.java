@@ -137,7 +137,10 @@ class PyGetTest {
             Collections.emptyList(),
             Flowable.empty()
         );
-        MatcherAssert.assertThat(response, new RsHasStatus(RsStatus.NOT_FOUND));
+        MatcherAssert.assertThat(
+            "Resource should fail while getting root from not base path",
+            response, new RsHasStatus(RsStatus.NOT_FOUND)
+        );
     }
 
     @Test
@@ -163,6 +166,7 @@ class PyGetTest {
     @Test
     void shouldFailGetPackageVersionsWhenNotExists() {
         MatcherAssert.assertThat(
+            "Resources should fail while getting package versions when not exists",
             this.pyslice.response(
                 "GET /base/unknown-package/index.json",
                 Collections.emptyList(),

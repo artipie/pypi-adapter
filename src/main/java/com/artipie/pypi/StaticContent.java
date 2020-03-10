@@ -89,6 +89,7 @@ public final class StaticContent implements Resource {
      * Builds key to storage value from path.
      *
      * @return Key to storage value.
+     * @todo #28:15m/DEV Extract it into another class
      */
     private Key.From key() {
         final String normalized;
