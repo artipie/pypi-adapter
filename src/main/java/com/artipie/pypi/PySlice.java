@@ -64,9 +64,8 @@ public final class PySlice implements Slice {
     }
 
     @Override
-    public Response response(final String line,
-                             final Iterable<Map.Entry<String, String>> headers,
-                             final Publisher<ByteBuffer> body) {
+    public Response response(final String line, final Iterable<Map.Entry<String, String>> headers,
+        final Publisher<ByteBuffer> body) {
         final Response response;
         final RequestLineFrom request = new RequestLineFrom(line);
         final String path = request.uri().getPath();

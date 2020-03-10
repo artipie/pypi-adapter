@@ -92,7 +92,6 @@ public final class StaticContent implements Resource {
         return new RsWithStatus(RsStatus.METHOD_NOT_ALLOWED);
     }
 
-
     /**
      * Builds key to storage value from path.
      *

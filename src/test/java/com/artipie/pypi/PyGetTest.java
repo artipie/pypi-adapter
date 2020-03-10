@@ -32,10 +32,7 @@ import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rs.RsStatus;
-import com.google.common.io.Resources;
 import io.reactivex.Flowable;
-import java.net.URL;
-import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
@@ -68,7 +65,6 @@ class PyGetTest {
         this.storage = new FileStorage(temp);
         this.pyslice = new PySlice("/base/", this.storage);
     }
-
 
     @Test
     void shouldGetPackageContent() {
@@ -174,11 +170,5 @@ class PyGetTest {
             ),
             new RsHasStatus(RsStatus.NOT_FOUND)
         );
-    }
-
-    private static Flowable<ByteBuffer> pypi() throws Exception {
-        final URL resource = Thread.currentThread().getContextClassLoader()
-            .getResource("html/test.html");
-        return Flowable.fromArray(ByteBuffer.wrap(Resources.toByteArray(resource)));
     }
 }
