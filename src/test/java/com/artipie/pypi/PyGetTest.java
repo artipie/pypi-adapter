@@ -31,12 +31,17 @@ import com.artipie.asto.fs.FileStorage;
 import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasStatus;
+import com.artipie.http.rs.RsStatus;
+import com.google.common.io.Resources;
 import io.reactivex.Flowable;
-import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -64,23 +69,26 @@ class PyGetTest {
         this.pyslice = new PySlice("/base/", this.storage);
     }
 
+
     @Test
     void shouldGetPackageContent() {
         final byte[] data = "data".getBytes();
         new BlockingStorage(this.storage).save(
-            new Key.From("package", "1.0.0", "content.py"),
+            new Key.From("package", "1.0.0", "content.pypi"),
             data
         );
-        final Response response = this.pyslice.response(
-            "GET /base/package/1.0.0/content.py",
-            Collections.emptyList(),
-            Flowable.empty()
-        );
         MatcherAssert.assertThat(
-            response,
-            Matchers.allOf(
-                new RsHasStatus(HttpURLConnection.HTTP_OK),
-                new RsHasBody(data)
+            "Package content should be returned in response",
+            this.pyslice.response(
+                "GET /base/package/1.0.0/content.pypi",
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new AllOf<>(
+                Arrays.asList(
+                    new RsHasStatus(RsStatus.OK),
+                    new RsHasBody(data)
+                )
             )
         );
     }
@@ -88,38 +96,89 @@ class PyGetTest {
     @Test
     void shouldFailGetPackageContentFromNotBasePath() {
         final Response response = this.pyslice.response(
-            "GET /not-base/package/1.0.0/content.py",
+            "GET /not-base/package/1.0.0/content.pypi",
             Collections.emptyList(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
             "Resources from outside of base path should not be found",
             response,
-            new RsHasStatus(HttpURLConnection.HTTP_NOT_FOUND)
+            new RsHasStatus(RsStatus.NOT_FOUND)
         );
     }
 
     @Test
     void shouldFailGetPackageContentWhenNotExists() {
-        final Response response = this.pyslice.response(
-            "GET /base/package/1.0.0/logo.png",
-            Collections.emptyList(),
-            Flowable.empty()
+        MatcherAssert.assertThat(
+            "Not existing content should not be found",
+            this.pyslice.response(
+                "GET /base/package/1.0.0/logo.png",
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.NOT_FOUND)
         );
-        MatcherAssert.assertThat(response, new RsHasStatus(HttpURLConnection.HTTP_NOT_FOUND));
     }
 
     @Test
     void shouldFailPutPackageContent() {
         final Response response = this.pyslice.response(
-            "PUT /base/package/1.0.0/content.py",
+            "PUT /base/package/1.0.0/content.pypi",
             Collections.emptyList(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
             "Package content cannot be put",
             response,
-            new RsHasStatus(HttpURLConnection.HTTP_BAD_METHOD)
+            new RsHasStatus(RsStatus.METHOD_NOT_ALLOWED)
         );
+    }
+
+    @Test
+    void shouldFailGetRootFromNotBasePath() {
+        final Response response = this.pyslice.response(
+            "GET /not-base",
+            Collections.emptyList(),
+            Flowable.empty()
+        );
+        MatcherAssert.assertThat(response, new RsHasStatus(RsStatus.NOT_FOUND));
+    }
+
+    @Test
+    void shouldGetPackageVersions() {
+        final byte[] data = "example".getBytes();
+        new BlockingStorage(this.storage).save(
+            new Key.From("package2", "index.json"),
+            data
+        );
+        MatcherAssert.assertThat(
+            this.pyslice.response(
+                "GET /base/package2/index.json",
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            Matchers.allOf(
+                new RsHasStatus(RsStatus.OK),
+                new RsHasBody(data)
+            )
+        );
+    }
+
+    @Test
+    void shouldFailGetPackageVersionsWhenNotExists() {
+        MatcherAssert.assertThat(
+            this.pyslice.response(
+                "GET /base/unknown-package/index.json",
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.NOT_FOUND)
+        );
+    }
+
+    private static Flowable<ByteBuffer> pypi() throws Exception {
+        final URL resource = Thread.currentThread().getContextClassLoader()
+            .getResource("html/test.html");
+        return Flowable.fromArray(ByteBuffer.wrap(Resources.toByteArray(resource)));
     }
 }

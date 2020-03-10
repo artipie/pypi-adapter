@@ -27,13 +27,13 @@ package com.artipie.pypi;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.http.Response;
+import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
-import java.net.HttpURLConnection;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import org.reactivestreams.Publisher;
 
 /**
  * StaticContent.
@@ -64,43 +64,47 @@ public final class StaticContent implements Resource {
 
     @Override
     public Response get() {
-        Response response;
-        try {
-            response = this.getAsync().get();
-        } catch (final InterruptedException | ExecutionException ex) {
-            response = new RsWithStatus(HttpURLConnection.HTTP_INTERNAL_ERROR);
-        }
-        return response;
-    }
-
-    /**
-     * Serve GET method async.
-     *
-     * @return Response to request.
-     */
-    private Future<Response> getAsync() {
-        return CompletableFuture
-            .supplyAsync(() -> new Key.From(this.path))
+        return connection -> CompletableFuture
+            .supplyAsync(this::key)
             .thenCompose(
                 key -> this.storage.exists(key).thenCompose(
                     exists -> {
-                        final CompletionStage<Response> response;
+                        final CompletionStage<Void> sent;
                         if (exists) {
-                            response = this.storage.value(key).thenApplyAsync(
-                                data -> connection -> connection.accept(
-                                    HttpURLConnection.HTTP_OK,
+                            sent = this.storage.value(key).thenCompose(
+                                data -> connection.accept(
+                                    RsStatus.OK,
                                     Collections.emptyList(),
                                     data
                                 )
                             );
                         } else {
-                            response = CompletableFuture.completedFuture(
-                                new RsWithStatus(HttpURLConnection.HTTP_NOT_FOUND)
-                            );
+                            sent = new RsWithStatus(RsStatus.NOT_FOUND).send(connection);
                         }
-                        return response;
+                        return sent;
                     }
                 )
             );
+    }
+
+    @Override
+    public Response put(final Publisher<ByteBuffer> body) {
+        return new RsWithStatus(RsStatus.METHOD_NOT_ALLOWED);
+    }
+
+
+    /**
+     * Builds key to storage value from path.
+     *
+     * @return Key to storage value.
+     */
+    private Key.From key() {
+        final String normalized;
+        if (this.path.charAt(0) == '/') {
+            normalized = this.path.substring(1);
+        } else {
+            normalized = this.path;
+        }
+        return new Key.From(normalized);
     }
 }

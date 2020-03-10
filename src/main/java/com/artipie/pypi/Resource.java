@@ -25,6 +25,8 @@
 package com.artipie.pypi;
 
 import com.artipie.http.Response;
+import java.nio.ByteBuffer;
+import org.reactivestreams.Publisher;
 
 /**
  * Resource.
@@ -38,4 +40,12 @@ public interface Resource {
      * @return Response to request.
      */
     Response get();
+
+    /**
+     * Serve PUT method.
+     *
+     * @param body Request body.
+     * @return Response to request.
+     */
+    Response put(Publisher<ByteBuffer> body);
 }

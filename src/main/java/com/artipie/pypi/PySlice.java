@@ -28,8 +28,9 @@ import com.artipie.asto.Storage;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RequestLineFrom;
+import com.artipie.http.rq.RqMethod;
+import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
-import java.net.HttpURLConnection;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import org.reactivestreams.Publisher;
@@ -63,22 +64,35 @@ public final class PySlice implements Slice {
     }
 
     @Override
-    public Response response(final String line, final Iterable<Map.Entry<String, String>> iterable,
-        final Publisher<ByteBuffer> publisher) {
+    public Response response(final String line,
+                             final Iterable<Map.Entry<String, String>> headers,
+                             final Publisher<ByteBuffer> body) {
         final Response response;
         final RequestLineFrom request = new RequestLineFrom(line);
         final String path = request.uri().getPath();
         if (path.startsWith(this.base)) {
-            final String relative = path.substring(this.base.length());
-            final Resource resource = new StaticContent(relative, this.storage);
-            if (request.method().equals("GET")) {
+            final Resource resource = this.resource(path.substring(this.base.length()));
+            final RqMethod method = request.method();
+            if (method.equals(RqMethod.GET)) {
                 response = resource.get();
+            } else if (method.equals(RqMethod.PUT)) {
+                response = resource.put(body);
             } else {
-                response = new RsWithStatus(HttpURLConnection.HTTP_BAD_METHOD);
+                response = new RsWithStatus(RsStatus.METHOD_NOT_ALLOWED);
             }
         } else {
-            response = new RsWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
+            response = new RsWithStatus(RsStatus.NOT_FOUND);
         }
         return response;
+    }
+
+    /**
+     * Find resource by relative path.
+     *
+     * @param path Relative path.
+     * @return Resource found by path.
+     */
+    private Resource resource(final String path) {
+        return new StaticContent(path, this.storage);
     }
 }
