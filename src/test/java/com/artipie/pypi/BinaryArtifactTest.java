@@ -1,10 +1,7 @@
 package com.artipie.pypi;
 
-import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -37,7 +34,8 @@ public class BinaryArtifactTest {
         final String string = "string";
         BinaryArtifact artifact = new BinaryArtifact(string, string);
         CompletableFuture<Void> future = artifact.save(storage);
-        future.thenRun(()->{}
+        future.thenRun(() -> {
+                }
         );
 
     }
