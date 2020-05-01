@@ -27,50 +27,41 @@ package com.artipie.pypi;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
+import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
-
 /**
- * PackagesMetaTest.
+ * Testcase for {@link PackagesMeta} class.
  *
  * @since 0.1
  */
-public class PackagesMetaTest {
+final class PackagesMetaTest {
 
     /**
-     * Storage used in tests.
+     * Test for save meta in the storage.
+     *
+     * @checkstyle LineLengthCheck (9 lines).
+     * @param temp Temp directory.
      */
-    private Storage storage;
-
-    /**
-     * Tested Py slice.
-     */
-    private PySlice pyslice;
-
-    @BeforeEach
-    void init(final @TempDir Path temp) {
-        this.storage = new FileStorage(temp);
-        this.pyslice = new PySlice("/base/", this.storage);
-    }
-
     @Test
-    public void shouldGetPackagesContentTest() {
-        final String html = "<html><head></head><body><table><thead><tr><th>Filename</th></tr></thead><tbody><tr><td><a href=\"single-package\">single-package</a></td></tr></tbody></table></body></html>";
-        final PackagesMeta meta = new PackagesMeta(html);
-        CompletableFuture<Void> future = meta.save(storage,
-                new Key.From("package", "1.0.0", "content.pypi")
-        );
-        future.thenCompose(res -> storage.exists(new Key.From("package", "1.0.0", "content.pypi")).thenApply(present -> {
+    public void shouldGetPackagesContentTest(final @TempDir Path temp) throws ExecutionException, InterruptedException {
+        final Storage storage = new FileStorage(temp);
+        final PackagesMeta meta = new PackagesMeta("<html><head></head><body><table><thead><tr><th>Filename1</th></tr></thead><tbody><tr><td><a href=\"single-package\">single-package</a></td></tr></tbody></table></body></html>");
+        final Key key = new Key.From("packageq", "1.0.0", "content.pypi");
+        final CompletableFuture<Void> future = meta.save(storage, key);
+        future.thenCompose(
+            res -> storage.exists(key).thenApply(
+                present -> {
                     MatcherAssert.assertThat(present, Matchers.equalTo(Boolean.TRUE));
                     return present;
                 })
         );
+        future.get();
     }
 
     /**
