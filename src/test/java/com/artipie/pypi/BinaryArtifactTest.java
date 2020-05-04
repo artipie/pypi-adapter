@@ -48,9 +48,7 @@ public final class BinaryArtifactTest {
 
     /**
      * Simple test for binary artifact meta.
-     * No apopriate methods in the BinaryArtifact class for check result
-     * imposible to implement appopriate Assertion test.
-     * TODO change test after class update
+     * No apopriate methods in the BinaryArtifact class for check result of save()
      */
     @Test
     public void shouldGetBinaryArtifactTest() throws ExecutionException, InterruptedException {
