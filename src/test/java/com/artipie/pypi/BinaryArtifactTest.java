@@ -51,9 +51,8 @@ public final class BinaryArtifactTest {
      * No apopriate methods in the BinaryArtifact class for check result of save()
      */
     @Test
-    public void shouldGetBinaryArtifactTest() throws ExecutionException, InterruptedException {
-        final String string = "string";
-        final BinaryArtifact artifact = new BinaryArtifact(string, string);
+    public void shouldGetBinaryArtifact() throws ExecutionException, InterruptedException {
+        final BinaryArtifact artifact = new BinaryArtifact("name", "content");
         final CompletableFuture<Void> future = artifact.save(this.storage);
         MatcherAssert.assertThat(future.thenRun(
             () -> {
