@@ -17,6 +17,8 @@ deploy:
     echo There is nothing to deploy
     exit 1
 release:
+  sensitive:
+    - settings.xml
   script: |-
     pdd -f /dev/null
     gpg --import /home/r/pubring.gpg
@@ -27,3 +29,4 @@ release:
 architect:
   - g4s8
   - yegor256
+
