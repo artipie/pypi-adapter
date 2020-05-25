@@ -62,6 +62,10 @@ public final class StaticContent implements Resource {
 
     @Override
     public Response get() {
+        return null;
+    }
+    /*@Override
+    public Response get() {
         return connection -> CompletableFuture
             .supplyAsync(this::key)
             .thenCompose(
@@ -83,7 +87,7 @@ public final class StaticContent implements Resource {
                     }
                 )
             );
-    }
+    }*/
 
     /**
      * Builds key to storage value from path.

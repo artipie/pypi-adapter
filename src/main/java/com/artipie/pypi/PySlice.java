@@ -25,14 +25,21 @@
 package com.artipie.pypi;
 
 import com.artipie.asto.Storage;
+import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
-import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.rt.RtRule;
+import com.artipie.http.rt.SliceRoute;
+import com.artipie.http.slice.LoggingSlice;
+import com.artipie.http.slice.SliceDownload;
+import com.artipie.http.slice.SliceSimple;
+import com.artipie.http.slice.SliceWithHeaders;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
 /**
@@ -53,35 +60,70 @@ public final class PySlice implements Slice {
     private final Storage storage;
 
     /**
+     * Origin.
+     */
+    private final Slice origin;
+
+    /**
      * Ctor.
      *
-     * @param base Base path.
+     * @param base    Base path.
      * @param storage Storage storage.
      */
     public PySlice(final String base, final Storage storage) {
         this.base = base;
         this.storage = storage;
+        this.origin = new SliceRoute(
+                new SliceRoute.Path(
+                        new RtRule.ByMethod(RqMethod.GET),
+                        new SliceDownload(storage)
+                ),
+                PySlice.pathGet(".+/@v/v.*\\.whl", PySlice.createSlice(storage, "text/html")),
+                PySlice.pathGet(".+/@v/v.*\\.gz", PySlice.createSlice(storage, "text/html")),
+                PySlice.pathGet("/simple/artipietestpkg/", PySlice.createSlice(storage, "text/html")),
+                new SliceRoute.Path(
+                        RtRule.FALLBACK,
+                        new SliceSimple(
+                                new RsWithStatus(RsStatus.NOT_FOUND)
+                        )
+                )
+        );
+
     }
 
     @Override
-    public Response response(final String line, final Iterable<Map.Entry<String, String>> headers,
-        final Publisher<ByteBuffer> body) {
-        final Response response;
-        final RequestLineFrom request = new RequestLineFrom(line);
-        final String path = request.uri().getPath();
-        if (path.startsWith(this.base)) {
-            final Resource resource = new StaticContent(
-                path.substring(this.base.length()), this.storage
-            );
-            final RqMethod method = request.method();
-            if (method.equals(RqMethod.GET)) {
-                response = resource.get();
-            } else {
-                response = new RsWithStatus(RsStatus.METHOD_NOT_ALLOWED);
-            }
-        } else {
-            response = new RsWithStatus(RsStatus.NOT_FOUND);
-        }
-        return response;
+    public Response response(
+            final String line, final Iterable<Map.Entry<String, String>> headers,
+            final Publisher<ByteBuffer> body) {
+        return this.origin.response(line, headers, body);
+    }
+
+    /**
+     * Creates slice instance.
+     * @param storage Storage
+     * @param type Content-type
+     * @return Slice
+     */
+    private static Slice createSlice(final Storage storage, final String type) {
+        return new SliceWithHeaders(
+                new LoggingSlice( new SliceDownload(storage) ),
+                new Headers.From("content-type", type)
+        );
+    }
+
+    /**
+     * This method simply encapsulates all the RtRule instantiations.
+     * @param pattern Route pattern
+     * @param slice Slice implementation
+     * @return Path route slice
+     */
+    private static SliceRoute.Path pathGet(final String pattern, final Slice slice) {
+        return new SliceRoute.Path(
+                new RtRule.Multiple(
+                        new RtRule.ByPath(Pattern.compile(pattern)),
+                        new RtRule.ByMethod(RqMethod.GET)
+                ),
+                new LoggingSlice(slice)
+        );
     }
 }
