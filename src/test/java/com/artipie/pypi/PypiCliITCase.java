@@ -80,7 +80,7 @@ public final class PypiCliITCase {
                 pypi,
             "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg"
             ),
-            Matchers.equalTo("Looking in indexes: https://test.pypi.org/simple/\n")
+            Matchers.startsWith("Looking in indexes: https://test.pypi.org/simple")
         );
         MatcherAssert.assertThat(
             this.bash(pypi, "python simplprg.py"),
