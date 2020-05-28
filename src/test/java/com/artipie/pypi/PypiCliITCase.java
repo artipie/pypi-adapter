@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 artipie.com
+ * Copyright (c) 2020 Artipie
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,12 +43,22 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 /**
  * A test which ensures {@code gem} console tool compatibility with the adapter.
  *
- * @since 0.2
- * @checkstyle StringLiteralsConcatenationCheck (500 lines)
+ * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle ParameterNumberCheck (500 lines)
+ * @checkstyle ParameterNameCheck (500 lines)
+ * @checkstyle MethodBodyCommentsCheck (500 lines)
+ * @checkstyle LineLengthCheck (500 lines)
+ * @checkstyle DesignForExtensionCheck (500 lines)
  */
 @SuppressWarnings("PMD.SystemPrintln")
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
-public class PypiCliITCase {
+public final class PypiCliITCase {
+
+    /**
+     * Root for test repository.
+     */
+    public static final String REPO_ROOT = "/simple";
 
     @Test
     public void pypiInstallWorks(@TempDir final Path temp)
@@ -56,20 +66,25 @@ public class PypiCliITCase {
         final Vertx vertx = Vertx.vertx();
         final VertxSliceServer server = new VertxSliceServer(
             vertx,
-            new PySlice("/simple", new FileStorage(temp, vertx.fileSystem()))
+            new PySlice(PypiCliITCase.REPO_ROOT, new FileStorage(temp, vertx.fileSystem()))
         );
         final int port = server.start();
-        final String host = String.format("http://host.testcontainers.internal:%d", port);
         Testcontainers.exposeHostPorts(port);
         final PypiContainer pypi = new PypiContainer()
             .withCommand("tail", "-f", "/dev/null")
             .withWorkingDirectory("/home/")
             .withFileSystemBind("./src/test/resources", "/home");
         pypi.start();
-
         MatcherAssert.assertThat(
-                this.bash(pypi,"pip install --index-url http://localhost/simple/ --no-deps artipietestpkg" ),
-                Matchers.equalTo("Import test is ok")
+            this.bash(
+                pypi,
+            "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg"
+            ),
+            Matchers.equalTo("Looking in indexes: https://test.pypi.org/simple/\n")
+        );
+        MatcherAssert.assertThat(
+            this.bash(pypi, "python simplprg.py"),
+            Matchers.equalTo("Import test is ok\n")
         );
         pypi.stop();
         server.close();
@@ -93,39 +108,39 @@ public class PypiCliITCase {
         );
         Logger.info(PypiCliITCase.class, exec.getStdout());
         Logger.info(PypiCliITCase.class, exec.getStderr());
-        if (!exec.getStderr().equals("")) {
-            throw new IllegalStateException("An error occurred");
-        }
         return exec.getStdout();
     }
 
-    @Test
-    public void pypiNewerFinishWork(@TempDir final Path temp)
-            throws IOException, InterruptedException {
+    /**
+     * For debug and integration purpose add @Test annotation to the function and run that test.
+     * @param temp Path to temporary directory.
+     * @checkstyle MethodsOrderCheck (5 lines)
+     * @checkstyle MagicNumberCheck (20 lines)
+     */
+    public void pypiLongTermServerRun(@TempDir final Path temp)
+        throws IOException, InterruptedException {
         FileUtils.copyDirectory(new File("./src/test/resources/example_pkg/dist"), temp.toFile());
         final Vertx vertx = Vertx.vertx();
         final VertxSliceServer server = new VertxSliceServer(
             vertx,
-            new PySlice("/simple", new FileStorage(temp, vertx.fileSystem())),
-       8080
-        );
-        final int port = server.start();
+            new PySlice(PypiCliITCase.REPO_ROOT, new FileStorage(temp, vertx.fileSystem())),
+            8080
+            );
+        server.start();
         Logger.debug(PypiCliITCase.class, "sleping...");
-        Thread.sleep(1000*60*60);
+        Thread.sleep(360_000);
         server.close();
         vertx.close();
     }
 
-        /**
-         * Inner subclass to instantiate Ruby container.
-         *
-         * @since 0.1
-         */
+    /**
+     * Inner subclass to instantiate python container.
+     *
+     * @since 0.1
+     */
     private static class PypiContainer extends GenericContainer<PypiContainer> {
         PypiContainer() {
-            super("python:2.7");
+            super("python:3");
         }
     }
-
-
 }

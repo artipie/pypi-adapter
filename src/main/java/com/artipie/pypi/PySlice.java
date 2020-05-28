@@ -46,8 +46,19 @@ import org.reactivestreams.Publisher;
  * PySlice.
  *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle ParameterNumberCheck (500 lines)
+ * @checkstyle ParameterNameCheck (500 lines)
+ * @checkstyle MethodBodyCommentsCheck (500 lines)
+ * @checkstyle LineLengthCheck (500 lines)
  */
+@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public final class PySlice implements Slice {
+
+    /**
+     * Content type.
+     */
+    public static final String TEXT_HTML = "text/html";
 
     /**
      * Base path.
@@ -67,34 +78,32 @@ public final class PySlice implements Slice {
     /**
      * Ctor.
      *
-     * @param base    Base path.
+     * @param base Base path.
      * @param storage Storage storage.
      */
     public PySlice(final String base, final Storage storage) {
         this.base = base;
         this.storage = storage;
         this.origin = new SliceRoute(
-                new SliceRoute.Path(
-                        new RtRule.ByMethod(RqMethod.GET),
-                        new SliceDownload(storage)
-                ),
-                PySlice.pathGet("^[a-zA-Z0-9]*.*\\.whl", PySlice.createSlice(storage, "text/html")),
-                PySlice.pathGet("^[a-zA-Z0-9]*.*\\.gz", PySlice.createSlice(storage, "text/html")),
-                PySlice.pathGet("/simple/artipietestpkg/", PySlice.createSlice(storage, "text/html")),
-                new SliceRoute.Path(
-                        RtRule.FALLBACK,
-                        new SliceSimple(
-                                new RsWithStatus(RsStatus.NOT_FOUND)
-                        )
+            new SliceRoute.Path(
+                new RtRule.ByMethod(RqMethod.GET),
+                new SliceDownload(storage)
+            ),
+            PySlice.pathGet("^[a-zA-Z0-9]*.*\\.whl", PySlice.createSlice(storage, PySlice.TEXT_HTML)),
+            PySlice.pathGet("^[a-zA-Z0-9]*.*\\.gz", PySlice.createSlice(storage, PySlice.TEXT_HTML)),
+            new SliceRoute.Path(
+                RtRule.FALLBACK,
+                new SliceSimple(
+                    new RsWithStatus(RsStatus.NOT_FOUND)
                 )
+            )
         );
-
     }
 
     @Override
     public Response response(
-            final String line, final Iterable<Map.Entry<String, String>> headers,
-            final Publisher<ByteBuffer> body) {
+        final String line, final Iterable<Map.Entry<String, String>> headers,
+        final Publisher<ByteBuffer> body) {
         return this.origin.response(line, headers, body);
     }
 
@@ -106,8 +115,8 @@ public final class PySlice implements Slice {
      */
     private static Slice createSlice(final Storage storage, final String type) {
         return new SliceWithHeaders(
-                new LoggingSlice( new SliceDownload(storage) ),
-                new Headers.From("content-type", type)
+            new LoggingSlice(new SliceDownload(storage)),
+            new Headers.From("content-type", type)
         );
     }
 
@@ -119,11 +128,11 @@ public final class PySlice implements Slice {
      */
     private static SliceRoute.Path pathGet(final String pattern, final Slice slice) {
         return new SliceRoute.Path(
-                new RtRule.Multiple(
-                        new RtRule.ByPath(Pattern.compile(pattern)),
-                        new RtRule.ByMethod(RqMethod.GET)
-                ),
-                new LoggingSlice(slice)
+            new RtRule.Multiple(
+                new RtRule.ByPath(Pattern.compile(pattern)),
+                new RtRule.ByMethod(RqMethod.GET)
+            ),
+            new LoggingSlice(slice)
         );
     }
 }
