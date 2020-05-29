@@ -61,6 +61,11 @@ public final class PySlice implements Slice {
     public static final String TEXT_HTML = "text/html";
 
     /**
+     * Constant for content type.
+     */
+    public static final String CONTENT_TYPE = "content-type";
+
+    /**
      * Base path.
      */
     private final String base;
@@ -89,8 +94,20 @@ public final class PySlice implements Slice {
                 new RtRule.ByMethod(RqMethod.GET),
                 new SliceDownload(storage)
             ),
-            PySlice.pathGet("^[a-zA-Z0-9]*.*\\.whl", PySlice.createSlice(storage, PySlice.TEXT_HTML)),
-            PySlice.pathGet("^[a-zA-Z0-9]*.*\\.gz", PySlice.createSlice(storage, PySlice.TEXT_HTML)),
+            PySlice.pathGet(
+            "^[a-zA-Z0-9]*.*\\.whl",
+                new SliceWithHeaders(
+                    new LoggingSlice(new SliceDownload(storage)),
+                    new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
+                )
+            ),
+            PySlice.pathGet(
+                "^[a-zA-Z0-9]*.*\\.gz",
+                new SliceWithHeaders(
+                    new LoggingSlice(new SliceDownload(storage)),
+                    new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
+                )
+            ),
             new SliceRoute.Path(
                 RtRule.FALLBACK,
                 new SliceSimple(
@@ -105,19 +122,6 @@ public final class PySlice implements Slice {
         final String line, final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> body) {
         return this.origin.response(line, headers, body);
-    }
-
-    /**
-     * Creates slice instance.
-     * @param storage Storage
-     * @param type Content-type
-     * @return Slice
-     */
-    private static Slice createSlice(final Storage storage, final String type) {
-        return new SliceWithHeaders(
-            new LoggingSlice(new SliceDownload(storage)),
-            new Headers.From("content-type", type)
-        );
     }
 
     /**
