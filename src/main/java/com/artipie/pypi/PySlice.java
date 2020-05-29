@@ -26,7 +26,6 @@ package com.artipie.pypi;
 
 import com.artipie.asto.Storage;
 import com.artipie.http.Headers;
-import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
@@ -37,23 +36,15 @@ import com.artipie.http.slice.LoggingSlice;
 import com.artipie.http.slice.SliceDownload;
 import com.artipie.http.slice.SliceSimple;
 import com.artipie.http.slice.SliceWithHeaders;
-import java.nio.ByteBuffer;
-import java.util.Map;
 import java.util.regex.Pattern;
-import org.reactivestreams.Publisher;
 
 /**
  * PySlice.
  *
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
- * @checkstyle ParameterNumberCheck (500 lines)
- * @checkstyle ParameterNameCheck (500 lines)
- * @checkstyle MethodBodyCommentsCheck (500 lines)
- * @checkstyle LineLengthCheck (500 lines)
  */
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-public final class PySlice implements Slice {
+public final class PySlice extends Slice.Wrap {
 
     /**
      * Content type.
@@ -66,66 +57,45 @@ public final class PySlice implements Slice {
     public static final String CONTENT_TYPE = "content-type";
 
     /**
-     * Base path.
-     */
-    private final String base;
-
-    /**
-     * Storage for packages.
-     */
-    private final Storage storage;
-
-    /**
-     * Origin.
-     */
-    private final Slice origin;
-
-    /**
      * Ctor.
      *
-     * @param base Base path.
      * @param storage Storage storage.
+     * @checkstyle UnusedFormalParameter (4 lines)
      */
-    public PySlice(final String base, final Storage storage) {
-        this.base = base;
-        this.storage = storage;
-        this.origin = new SliceRoute(
-            new SliceRoute.Path(
-                new RtRule.ByMethod(RqMethod.GET),
-                new SliceDownload(storage)
-            ),
-            PySlice.pathGet(
-            "^[a-zA-Z0-9]*.*\\.whl",
-                new SliceWithHeaders(
-                    new LoggingSlice(new SliceDownload(storage)),
-                    new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
-                )
-            ),
-            PySlice.pathGet(
-                "^[a-zA-Z0-9]*.*\\.gz",
-                new SliceWithHeaders(
-                    new LoggingSlice(new SliceDownload(storage)),
-                    new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
-                )
-            ),
-            new SliceRoute.Path(
-                RtRule.FALLBACK,
-                new SliceSimple(
-                    new RsWithStatus(RsStatus.NOT_FOUND)
+    public PySlice(final Storage storage) {
+        super(
+            new SliceRoute(
+                new SliceRoute.Path(
+                    new RtRule.ByMethod(RqMethod.GET),
+                    new SliceDownload(storage)
+                ),
+                PySlice.pathGet(
+                    "^[a-zA-Z0-9]*.*\\.whl",
+                    new SliceWithHeaders(
+                        new LoggingSlice(new SliceDownload(storage)),
+                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
+                    )
+                ),
+                PySlice.pathGet(
+                    "^[a-zA-Z0-9]*.*\\.gz",
+                    new SliceWithHeaders(
+                        new LoggingSlice(new SliceDownload(storage)),
+                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
+                    )
+                ),
+                new SliceRoute.Path(
+                    RtRule.FALLBACK,
+                    new SliceSimple(
+                        new RsWithStatus(RsStatus.NOT_FOUND)
+                    )
                 )
             )
         );
     }
 
-    @Override
-    public Response response(
-        final String line, final Iterable<Map.Entry<String, String>> headers,
-        final Publisher<ByteBuffer> body) {
-        return this.origin.response(line, headers, body);
-    }
-
     /**
      * This method simply encapsulates all the RtRule instantiations.
+     *
      * @param pattern Route pattern
      * @param slice Slice implementation
      * @return Path route slice

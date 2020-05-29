@@ -45,20 +45,10 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
  *
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
- * @checkstyle ParameterNumberCheck (500 lines)
- * @checkstyle ParameterNameCheck (500 lines)
- * @checkstyle MethodBodyCommentsCheck (500 lines)
- * @checkstyle LineLengthCheck (500 lines)
- * @checkstyle DesignForExtensionCheck (500 lines)
  */
 @SuppressWarnings("PMD.SystemPrintln")
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
 public final class PypiCliITCase {
-
-    /**
-     * Root for test repository.
-     */
-    public static final String REPO_ROOT = "/simple";
 
     @Test
     public void pypiInstallWorks(@TempDir final Path temp)
@@ -66,7 +56,7 @@ public final class PypiCliITCase {
         final Vertx vertx = Vertx.vertx();
         final VertxSliceServer server = new VertxSliceServer(
             vertx,
-            new PySlice(PypiCliITCase.REPO_ROOT, new FileStorage(temp, vertx.fileSystem()))
+            new PySlice(new FileStorage(temp, vertx.fileSystem()))
         );
         final int port = server.start();
         Testcontainers.exposeHostPorts(port);
@@ -95,7 +85,7 @@ public final class PypiCliITCase {
      * Executes a bash command in a python container.
      * @param pypi The python container.
      * @param command Bash command to execute.
-     * @return Exit code.
+     * @return Stdout of command.
      * @throws IOException If fails.
      * @throws InterruptedException If fails.
      */
@@ -123,9 +113,9 @@ public final class PypiCliITCase {
         final Vertx vertx = Vertx.vertx();
         final VertxSliceServer server = new VertxSliceServer(
             vertx,
-            new PySlice(PypiCliITCase.REPO_ROOT, new FileStorage(temp, vertx.fileSystem())),
+            new PySlice(new FileStorage(temp, vertx.fileSystem())),
             8080
-            );
+        );
         server.start();
         Logger.debug(PypiCliITCase.class, "sleping...");
         Thread.sleep(360_000);
