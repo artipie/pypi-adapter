@@ -24,16 +24,58 @@
 
 package com.artipie.pypi;
 
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import com.artipie.asto.fs.FileStorage;
+import java.nio.file.Path;
+import java.util.concurrent.ExecutionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
- * PackagesMetaTest.
+ * Testcase for {@link PackagesMeta} class.
  *
  * @since 0.1
  */
-public class PackagesMetaTest {
+final class PackagesMetaTest {
+
+    /**
+     * Test for save meta in the storage.
+     *
+     * @param temp Temp directory.
+     * @checkstyle LineLengthCheck (9 lines).
+     */
+    @Test
+    public void shouldGetPackagesContent(final @TempDir Path temp) throws ExecutionException, InterruptedException {
+        final Storage storage = new FileStorage(temp);
+        final PackagesMeta meta = new PackagesMeta("<html><head></head><body><table><thead><tr><th>Filename1</th></tr></thead><tbody><tr><td><a href=\"single-package\">single-package</a></td></tr></tbody></table></body></html>");
+        final Key key = new Key.From("packageq", "1.0.2", "contentq.pypi");
+        meta.save(storage, key).get();
+        MatcherAssert.assertThat(
+            storage.exists(key).get(), new IsEqual<>(true)
+        );
+    }
+
+    /**
+     * Test  that the storage will not return data on the wrong key.
+     *
+     * @param temp Temp directory.
+     * @checkstyle LineLengthCheck (9 lines).
+     */
+    @SuppressWarnings("PMD.AvoidDuplicateLiterals")
+    @Test
+    public void shoulNotdGetPackagesContent(final @TempDir Path temp) throws ExecutionException, InterruptedException {
+        final Storage storage = new FileStorage(temp);
+        final PackagesMeta meta = new PackagesMeta("<html><head></head><body><table><thead><tr><th>Filename3</th></tr></thead><tbody><tr><td><a href=\"single-package\">single-package</a></td></tr></tbody></table></body></html>");
+        meta.save(storage, new Key.From("package", "1.0.0", "content.pypi")).get();
+        MatcherAssert.assertThat(
+            storage.exists(new Key.From("packageThatNotExist", "1.0.0", "content.pypi")).get(),
+            new IsEqual<>(false)
+        );
+    }
 
     /**
      * Simple test for artifact meta.
@@ -46,7 +88,7 @@ public class PackagesMetaTest {
         MatcherAssert.assertThat(
             meta.update(new ArtifactMeta("artifact-1.0.0")).html(),
             Matchers.equalTo(
-                "<html><head></head><body><table><thead><tr><th>Filename</th></tr></thead><tbody><tr><td><a href=\"artifact-1.0.0.tar.gz\">artifact-1.0.0.tar.gz</a></td></tr></tbody></table></body></html>"
+            "<html><head></head><body><table><thead><tr><th>Filename</th></tr></thead><tbody><tr><td><a href=\"artifact-1.0.0.tar.gz\">artifact-1.0.0.tar.gz</a></td></tr></tbody></table></body></html>"
             )
         );
     }
@@ -62,7 +104,7 @@ public class PackagesMetaTest {
         MatcherAssert.assertThat(
             meta.update(new PackageMeta("package")).html(),
             Matchers.equalTo(
-                "<html><head></head><body><table><thead><tr><th>Filename</th></tr></thead><tbody><tr><td><a href=\"package\">package</a></td></tr></tbody></table></body></html>"
+            "<html><head></head><body><table><thead><tr><th>Filename</th></tr></thead><tbody><tr><td><a href=\"package\">package</a></td></tr></tbody></table></body></html>"
             )
         );
     }
