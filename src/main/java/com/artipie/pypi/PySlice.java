@@ -25,63 +25,88 @@
 package com.artipie.pypi;
 
 import com.artipie.asto.Storage;
-import com.artipie.http.Response;
+import com.artipie.http.Headers;
 import com.artipie.http.Slice;
-import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
-import java.nio.ByteBuffer;
-import java.util.Map;
-import org.reactivestreams.Publisher;
+import com.artipie.http.rt.RtRule;
+import com.artipie.http.rt.SliceRoute;
+import com.artipie.http.slice.LoggingSlice;
+import com.artipie.http.slice.SliceDownload;
+import com.artipie.http.slice.SliceSimple;
+import com.artipie.http.slice.SliceWithHeaders;
+import java.util.regex.Pattern;
 
 /**
  * PySlice.
  *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-public final class PySlice implements Slice {
+public final class PySlice extends Slice.Wrap {
 
     /**
-     * Base path.
+     * Content type.
      */
-    private final String base;
+    public static final String TEXT_HTML = "text/html";
 
     /**
-     * Storage for packages.
+     * Constant for content type.
      */
-    private final Storage storage;
+    public static final String CONTENT_TYPE = "content-type";
 
     /**
      * Ctor.
      *
-     * @param base Base path.
      * @param storage Storage storage.
+     * @checkstyle UnusedFormalParameter (4 lines)
      */
-    public PySlice(final String base, final Storage storage) {
-        this.base = base;
-        this.storage = storage;
+    public PySlice(final Storage storage) {
+        super(
+            new SliceRoute(
+                new SliceRoute.Path(
+                    new RtRule.ByMethod(RqMethod.GET),
+                    new SliceDownload(storage)
+                ),
+                PySlice.pathGet(
+                    "^[a-zA-Z0-9]*.*\\.whl",
+                    new SliceWithHeaders(
+                        new LoggingSlice(new SliceDownload(storage)),
+                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
+                    )
+                ),
+                PySlice.pathGet(
+                    "^[a-zA-Z0-9]*.*\\.gz",
+                    new SliceWithHeaders(
+                        new LoggingSlice(new SliceDownload(storage)),
+                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
+                    )
+                ),
+                new SliceRoute.Path(
+                    RtRule.FALLBACK,
+                    new SliceSimple(
+                        new RsWithStatus(RsStatus.NOT_FOUND)
+                    )
+                )
+            )
+        );
     }
 
-    @Override
-    public Response response(final String line, final Iterable<Map.Entry<String, String>> headers,
-        final Publisher<ByteBuffer> body) {
-        final Response response;
-        final RequestLineFrom request = new RequestLineFrom(line);
-        final String path = request.uri().getPath();
-        if (path.startsWith(this.base)) {
-            final Resource resource = new StaticContent(
-                path.substring(this.base.length()), this.storage
-            );
-            final RqMethod method = request.method();
-            if (method.equals(RqMethod.GET)) {
-                response = resource.get();
-            } else {
-                response = new RsWithStatus(RsStatus.METHOD_NOT_ALLOWED);
-            }
-        } else {
-            response = new RsWithStatus(RsStatus.NOT_FOUND);
-        }
-        return response;
+    /**
+     * This method simply encapsulates all the RtRule instantiations.
+     *
+     * @param pattern Route pattern
+     * @param slice Slice implementation
+     * @return Path route slice
+     */
+    private static SliceRoute.Path pathGet(final String pattern, final Slice slice) {
+        return new SliceRoute.Path(
+            new RtRule.Multiple(
+                new RtRule.ByPath(Pattern.compile(pattern)),
+                new RtRule.ByMethod(RqMethod.GET)
+            ),
+            new LoggingSlice(slice)
+        );
     }
 }
