@@ -21,48 +21,59 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 package com.artipie.pypi;
 
 import com.artipie.asto.Storage;
-import com.artipie.asto.fs.FileStorage;
-import java.nio.file.Path;
+import com.artipie.http.Headers;
+import com.artipie.http.Response;
+import com.artipie.http.Slice;
+import com.artipie.http.async.AsyncResponse;
+import com.artipie.http.rq.RqMethod;
+import com.artipie.http.rs.RsStatus;
+import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.rt.RtRule;
+import com.artipie.http.rt.SliceRoute;
+import com.artipie.http.slice.*;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
+import org.reactivestreams.Publisher;
+
+import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import java.util.concurrent.CompletionStage;
+import java.util.regex.Pattern;
 
 /**
- * Testcase for {@link BinaryArtifact} class.
+ * WhelSlice.
  *
  * @since 0.2
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-public final class BinaryArtifactTest {
+public final class WhelSlice implements Slice {
 
     /**
-     * Storage used in tests.
+     * The Storage.
      */
-    private Storage storage;
+    private final Storage storage;
 
     /**
-     * Simple test for binary artifact meta.
-     * No apopriate methods in the BinaryArtifact class for check result of save()
+     * Ctor.
+     *
+     * @param storage Storage storage.
+     * @checkstyle UnusedFormalParameter (4 lines)
      */
-    @Test
-    public void shouldGetBinaryArtifact() throws ExecutionException, InterruptedException {
-        final BinaryArtifact artifact = new BinaryArtifact("name", "content");
-        final CompletableFuture<Void> future = artifact.save(this.storage);
-        MatcherAssert.assertThat(future.thenRun(
-            () -> {
-            }
-        ).get(), Matchers.nullValue()
-        );
+    public WhelSlice(final Storage storage) {
+        this.storage = storage;
     }
 
-    @BeforeEach
-    void init(final @TempDir Path temp) {
-        this.storage = new FileStorage(temp);
+    @Override
+    public Response response(String s,
+        Iterable<Map.Entry<String, String>> iterable,
+        Publisher<ByteBuffer> publisher
+    ){
+
+        return new RsWithStatus(RsStatus.NOT_IMPLEMENTED);
     }
 }

@@ -32,10 +32,8 @@ import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.SliceRoute;
-import com.artipie.http.slice.LoggingSlice;
-import com.artipie.http.slice.SliceDownload;
-import com.artipie.http.slice.SliceSimple;
-import com.artipie.http.slice.SliceWithHeaders;
+import com.artipie.http.slice.*;
+
 import java.util.regex.Pattern;
 
 /**
@@ -84,13 +82,26 @@ public final class PySlice extends Slice.Wrap {
                     )
                 ),
                 new SliceRoute.Path(
+                        new RtRule.ByMethod(RqMethod.POST),
+                        PySlice.uploadPackage(storage)
+                ),
+                new SliceRoute.Path(
                     RtRule.FALLBACK,
                     new SliceSimple(
-                        new RsWithStatus(RsStatus.NOT_FOUND)
+                        new RsWithStatus(RsStatus.  NOT_FOUND)
                     )
                 )
             )
         );
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param storage Storage.
+     */
+    private static Slice uploadPackage(Storage storage) {
+        return new WhelSlice(storage);
     }
 
     /**
