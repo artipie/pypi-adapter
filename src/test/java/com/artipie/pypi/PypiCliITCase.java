@@ -48,6 +48,11 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
 public final class PypiCliITCase extends PypiContainerTestCommon {
 
+    /**
+     * Test start docker container, set up all python utils and download python packege.
+     * @param temp Path to temporary directory.
+     * @checkstyle MethodsOrderCheck (5 lines)
+     */
     @Test
     public void pypiInstallWorks(@TempDir final Path temp)
         throws IOException, InterruptedException {

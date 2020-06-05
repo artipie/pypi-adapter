@@ -26,27 +26,33 @@ package com.artipie.pypi;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.vertx.VertxSliceServer;
 import io.vertx.reactivex.core.Vertx;
+import java.io.IOException;
+import java.nio.file.Path;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.Testcontainers;
 
-import java.io.IOException;
-import java.nio.file.Path;
-
 /**
  * A test which ensures {@code python} console tool compatibility with the adapter.
  *
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle LineLengthCheck (500 lines).
  */
 @SuppressWarnings("PMD.SystemPrintln")
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
 public final class PypiPublishTCase extends PypiContainerTestCommon {
 
+    /**
+     * Test start docker container, set up all python utils and publish python packeges.
+     * @param temp Path to temporary directory.
+     * @checkstyle MethodsOrderCheck (5 lines)
+     * @throws IOException In case of network error
+     * @throws InterruptedException In case of network error or something else
+     */
     @Test
     public void pypiPublishWorks(@TempDir final Path temp)
         throws IOException, InterruptedException {
@@ -63,8 +69,11 @@ public final class PypiPublishTCase extends PypiContainerTestCommon {
             "python3 -m pip install --user --upgrade twine"
         );
         MatcherAssert.assertThat(
-            this.bash(pypi, "python3 -m twine upload --repository-url http://127.0.0.1:"+ port+" -u artem.lazarev -p pass --verbose example_pkg/dist/*"),
-                StringContains.containsString("Uploading distributions")
+            this.bash(
+                pypi,
+                String.format("python3 -m twine upload --repository-url http://127.0.0.1: '%s' -u artem.lazarev -p pass --verbose example_pkg/dist/*", port)
+            ),
+            StringContains.containsString("Uploading distributions")
         );
         pypi.stop();
         server.close();

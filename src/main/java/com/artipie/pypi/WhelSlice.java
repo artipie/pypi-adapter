@@ -24,32 +24,23 @@
 
 package com.artipie.pypi;
 
+import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
-import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
-import com.artipie.http.rt.RtRule;
-import com.artipie.http.rt.SliceRoute;
-import com.artipie.http.slice.*;
-import io.reactivex.Flowable;
-import io.reactivex.Single;
-import org.reactivestreams.Publisher;
-
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.regex.Pattern;
+import org.reactivestreams.Publisher;
 
 /**
  * WhelSlice.
  *
  * @since 0.2
- * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class WhelSlice implements Slice {
 
@@ -61,19 +52,40 @@ public final class WhelSlice implements Slice {
     /**
      * Ctor.
      *
-     * @param storage Storage storage.
-     * @checkstyle UnusedFormalParameter (4 lines)
+     * @param storage Storage.
      */
     public WhelSlice(final Storage storage) {
         this.storage = storage;
     }
 
     @Override
-    public Response response(String s,
-        Iterable<Map.Entry<String, String>> iterable,
-        Publisher<ByteBuffer> publisher
-    ){
+    public Response response(final String line,
+        final Iterable<Map.Entry<String, String>> iterable,
+        final Publisher<ByteBuffer> publisher
+    ) {
+        final Key tmp = new Key.From(this.name(line));
+        return new AsyncResponse(
+            CompletableFuture
+                .supplyAsync(() -> tmp)
+                .thenCompose(
+                    key -> this.storage.save(key, new Multipart(iterable, publisher).content())
+                        .thenApply(
+                            ignored -> {
+                                return new RsWithStatus(RsStatus.CREATED);
+                            }
+                        )
+                )
+        );
+    }
 
-        return new RsWithStatus(RsStatus.NOT_IMPLEMENTED);
+    /**
+     * Generate file name for temp file.
+     *
+     * @param line Params from request.
+     * @return Temp File name.
+     * @checkstyle NonStaticMethodCheck (500 lines).
+     */
+    public String name(final String line) {
+        return String.format("tmp'%s'.tar.gz", UUID.randomUUID().toString());
     }
 }
