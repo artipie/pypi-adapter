@@ -37,7 +37,7 @@ import java.util.UUID;
 import org.reactivestreams.Publisher;
 
 /**
- * WhelSlice.
+ * WheelSlice.
  *
  * @since 0.2
  */
@@ -62,9 +62,8 @@ public final class WheelSlice implements Slice {
         final Iterable<Map.Entry<String, String>> iterable,
         final Publisher<ByteBuffer> publisher
     ) {
-        final Key tmp = new Key.From(this.name(line));
         return new AsyncResponse(
-            this.storage.save(tmp, new Multipart(iterable, publisher).content())
+            this.storage.save(new Key.From(this.name(line)), new Multipart(iterable, publisher).content())
                 .thenApply(
                     ignored -> new RsWithStatus(RsStatus.CREATED)
                 )
