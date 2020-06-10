@@ -85,7 +85,7 @@ public final class PySlice extends Slice.Wrap {
                 ),
                 new SliceRoute.Path(
                     new RtRule.ByMethod(RqMethod.POST),
-                    PySlice.uploadPackage(storage)
+                    new WhlSlice(storage)
                 ),
                 new SliceRoute.Path(
                     RtRule.FALLBACK,
@@ -96,17 +96,6 @@ public final class PySlice extends Slice.Wrap {
             )
         );
     }
-
-    /**
-     * Ctor.
-     *
-     * @param storage Storage.
-     * @return Implementation of slice with upload functionality
-     */
-    private static Slice uploadPackage(final Storage storage) {
-        return new WhelSlice(storage);
-    }
-
     /**
      * This method simply encapsulates all the RtRule instantiations.
      *

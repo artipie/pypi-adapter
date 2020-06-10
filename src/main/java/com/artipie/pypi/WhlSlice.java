@@ -42,7 +42,7 @@ import org.reactivestreams.Publisher;
  *
  * @since 0.2
  */
-public final class WhelSlice implements Slice {
+public final class WhlSlice implements Slice {
 
     /**
      * The Storage.
@@ -54,7 +54,7 @@ public final class WhelSlice implements Slice {
      *
      * @param storage Storage.
      */
-    public WhelSlice(final Storage storage) {
+    public WhlSlice(final Storage storage) {
         this.storage = storage;
     }
 
@@ -70,9 +70,7 @@ public final class WhelSlice implements Slice {
                 .thenCompose(
                     key -> this.storage.save(key, new Multipart(iterable, publisher).content())
                         .thenApply(
-                            ignored -> {
-                                return new RsWithStatus(RsStatus.CREATED);
-                            }
+                            ignored -> new RsWithStatus(RsStatus.CREATED)
                         )
                 )
         );
@@ -86,6 +84,6 @@ public final class WhelSlice implements Slice {
      * @checkstyle NonStaticMethodCheck (500 lines).
      */
     public String name(final String line) {
-        return String.format("tmp'%s'.tar.gz", UUID.randomUUID().toString());
+        return String.format("tmp%s.tar.gz", UUID.randomUUID().toString());
     }
 }
