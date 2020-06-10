@@ -34,7 +34,6 @@ import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import org.reactivestreams.Publisher;
 
 /**
@@ -42,7 +41,7 @@ import org.reactivestreams.Publisher;
  *
  * @since 0.2
  */
-public final class WhlSlice implements Slice {
+public final class WheelSlice implements Slice {
 
     /**
      * The Storage.
@@ -54,7 +53,7 @@ public final class WhlSlice implements Slice {
      *
      * @param storage Storage.
      */
-    public WhlSlice(final Storage storage) {
+    public WheelSlice(final Storage storage) {
         this.storage = storage;
     }
 
@@ -65,13 +64,9 @@ public final class WhlSlice implements Slice {
     ) {
         final Key tmp = new Key.From(this.name(line));
         return new AsyncResponse(
-            CompletableFuture
-                .supplyAsync(() -> tmp)
-                .thenCompose(
-                    key -> this.storage.save(key, new Multipart(iterable, publisher).content())
-                        .thenApply(
-                            ignored -> new RsWithStatus(RsStatus.CREATED)
-                        )
+            this.storage.save(tmp, new Multipart(iterable, publisher).content())
+                .thenApply(
+                    ignored -> new RsWithStatus(RsStatus.CREATED)
                 )
         );
     }

@@ -85,7 +85,7 @@ public final class PySlice extends Slice.Wrap {
                 ),
                 new SliceRoute.Path(
                     new RtRule.ByMethod(RqMethod.POST),
-                    new WhlSlice(storage)
+                    new WheelSlice(storage)
                 ),
                 new SliceRoute.Path(
                     RtRule.FALLBACK,
@@ -96,6 +96,7 @@ public final class PySlice extends Slice.Wrap {
             )
         );
     }
+
     /**
      * This method simply encapsulates all the RtRule instantiations.
      *

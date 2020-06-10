@@ -29,14 +29,14 @@ import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 
 /**
- * A base class for tests that instantiates container with python runtime.
+ * A class with base utility  for tests, that instantiates container with python runtime.
  *
  * @since 0.2
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  * @checkstyle LineLengthCheck (500 lines).
  * @checkstyle NonStaticMethodCheck (500 lines).
  */
-public class PypiContainerTestCommon {
+public class CommonTestRuntimeWrapper {
 
     /**
      * Executes a bash command in a python container.
@@ -64,7 +64,7 @@ public class PypiContainerTestCommon {
      *
      * @return Container object.
      */
-    protected PypiContainerTestCommon.PypiContainer constructPypiContainer() {
+    protected CommonTestRuntimeWrapper.PypiContainer constructPypiContainer() {
         final PypiContainer pypi = new PypiContainer()
             .withCommand("tail", "-f", "/dev/null")
             .withWorkingDirectory("/home/")
@@ -79,7 +79,7 @@ public class PypiContainerTestCommon {
      *
      * @since 0.1
      */
-    protected static class PypiContainer extends GenericContainer<PypiContainerTestCommon.PypiContainer> {
+    protected static class PypiContainer extends GenericContainer<CommonTestRuntimeWrapper.PypiContainer> {
 
         /**
          * Ctor.

@@ -46,7 +46,7 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
  */
 @SuppressWarnings("PMD.SystemPrintln")
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
-public final class PypiCliITCase extends PypiContainerTestCommon {
+public final class PypiCliITCase {
 
     /**
      * Test start docker container, set up all python utils and download python packege.
@@ -63,16 +63,17 @@ public final class PypiCliITCase extends PypiContainerTestCommon {
         );
         final int port = server.start();
         Testcontainers.exposeHostPorts(port);
-        final PypiContainer pypi = constructPypiContainer();
+        final CommonTestRuntimeWrapper runtime = new CommonTestRuntimeWrapper();
+        final CommonTestRuntimeWrapper.PypiContainer pypi = runtime.constructPypiContainer();
         MatcherAssert.assertThat(
-            this.bash(
+            runtime.bash(
                 pypi,
             "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg"
             ),
             Matchers.startsWith("Looking in indexes: https://test.pypi.org/simple")
         );
         MatcherAssert.assertThat(
-            this.bash(pypi, "python simplprg.py"),
+            runtime.bash(pypi, "python simplprg.py"),
             Matchers.equalTo("Import test is ok\n")
         );
         pypi.stop();

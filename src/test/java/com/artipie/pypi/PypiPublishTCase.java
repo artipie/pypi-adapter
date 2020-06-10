@@ -40,11 +40,12 @@ import org.testcontainers.Testcontainers;
  *
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle NonStaticMethodCheck (500 lines)
  * @checkstyle LineLengthCheck (500 lines).
  */
 @SuppressWarnings("PMD.SystemPrintln")
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
-public final class PypiPublishTCase extends PypiContainerTestCommon {
+public final class PypiPublishTCase {
 
     /**
      * Test start docker container, set up all python utils and publish python packeges.
@@ -63,15 +64,16 @@ public final class PypiPublishTCase extends PypiContainerTestCommon {
         );
         final int port = server.start();
         Testcontainers.exposeHostPorts(port);
-        final PypiContainer pypi = constructPypiContainer();
-        this.bash(
+        final CommonTestRuntimeWrapper runtime = new CommonTestRuntimeWrapper();
+        final CommonTestRuntimeWrapper.PypiContainer pypi = runtime.constructPypiContainer();
+        runtime.bash(
             pypi,
             "python3 -m pip install --user --upgrade twine"
         );
         MatcherAssert.assertThat(
-            this.bash(
+            runtime.bash(
                 pypi,
-                String.format("python3 -m twine upload --repository-url http://127.0.0.1: '%s' -u artem.lazarev -p pass --verbose example_pkg/dist/*", port)
+                String.format("python3 -m twine upload --repository-url http://127.0.0.1:%s -u artem.lazarev -p pass --verbose example_pkg/dist/*", port)
             ),
             StringContains.containsString("Uploading distributions")
         );
