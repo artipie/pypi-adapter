@@ -64,19 +64,17 @@ public final class PypiCliITCase {
         final int port = server.start();
         Testcontainers.exposeHostPorts(port);
         final CommonTestRuntimeWrapper runtime = new CommonTestRuntimeWrapper();
-        final CommonTestRuntimeWrapper.PypiContainer pypi = runtime.constructPypiContainer();
         MatcherAssert.assertThat(
             runtime.bash(
-                pypi,
             "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg"
             ),
             Matchers.startsWith("Looking in indexes: https://test.pypi.org/simple")
         );
         MatcherAssert.assertThat(
-            runtime.bash(pypi, "python simplprg.py"),
+            runtime.bash("python simplprg.py"),
             Matchers.equalTo("Import test is ok\n")
         );
-        pypi.stop();
+        runtime.stop();
         server.close();
         vertx.close();
     }

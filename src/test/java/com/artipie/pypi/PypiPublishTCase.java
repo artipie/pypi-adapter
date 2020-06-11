@@ -65,19 +65,16 @@ public final class PypiPublishTCase {
         final int port = server.start();
         Testcontainers.exposeHostPorts(port);
         final CommonTestRuntimeWrapper runtime = new CommonTestRuntimeWrapper();
-        final CommonTestRuntimeWrapper.PypiContainer pypi = runtime.constructPypiContainer();
         runtime.bash(
-            pypi,
             "python3 -m pip install --user --upgrade twine"
         );
         MatcherAssert.assertThat(
             runtime.bash(
-                pypi,
                 String.format("python3 -m twine upload --repository-url http://127.0.0.1:%s -u artem.lazarev -p pass --verbose example_pkg/dist/*", port)
             ),
             StringContains.containsString("Uploading distributions")
         );
-        pypi.stop();
+        runtime.stop();
         server.close();
         vertx.close();
     }

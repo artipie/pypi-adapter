@@ -37,7 +37,7 @@ import java.util.UUID;
 import org.reactivestreams.Publisher;
 
 /**
- * WheelSlice.
+ * WheelSlice save and manage whl and tgz entries.
  *
  * @since 0.2
  */

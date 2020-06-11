@@ -36,20 +36,19 @@ import org.testcontainers.containers.GenericContainer;
  * @checkstyle LineLengthCheck (500 lines).
  * @checkstyle NonStaticMethodCheck (500 lines).
  */
-public class CommonTestRuntimeWrapper {
+public class CommonTestRuntimeWrapper extends GenericContainer<CommonTestRuntimeWrapper> {
 
     /**
      * Executes a bash command in a python container.
      *
-     * @param pypi The python container.
      * @param command Bash command to execute.
      * @return Stdout of command.
      * @throws IOException          If fails.
      * @throws InterruptedException If fails.
      */
-    protected String bash(final PypiContainer pypi, final String command)
+    protected String bash(final String command)
         throws IOException, InterruptedException {
-        final Container.ExecResult exec =  pypi.execInContainer(
+        final Container.ExecResult exec =  this.execInContainer(
             "/bin/bash",
             "-c",
             command
@@ -64,28 +63,12 @@ public class CommonTestRuntimeWrapper {
      *
      * @return Container object.
      */
-    protected CommonTestRuntimeWrapper.PypiContainer constructPypiContainer() {
-        final PypiContainer pypi = new PypiContainer()
-            .withCommand("tail", "-f", "/dev/null")
-            .withWorkingDirectory("/home/")
-            .withFileSystemBind("./src/test/resources", "/home")
-            .withNetworkMode("host");
-        pypi.start();
-        return pypi;
-    }
-
-    /**
-     * Inner subclass to instantiate python container.
-     *
-     * @since 0.1
-     */
-    protected static class PypiContainer extends GenericContainer<CommonTestRuntimeWrapper.PypiContainer> {
-
-        /**
-         * Ctor.
-         */
-        PypiContainer() {
-            super("python:3");
-        }
+    CommonTestRuntimeWrapper() {
+        super("python:3");
+        this.setCommand("tail", "-f", "/dev/null");
+        this.setWorkingDirectory("/home/");
+        this.withFileSystemBind("./src/test/resources", "/home");
+        this.withNetworkMode("host");
+        this.start();
     }
 }
