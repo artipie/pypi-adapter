@@ -1,5 +1,5 @@
 ---
-name: Maven Build
+name: CI checks
 "on":
   push:
     branches:
@@ -8,12 +8,12 @@ name: Maven Build
     branches:
       - master
 jobs:
-  build:
+  maven-build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest]
-        java: [1.8, 11, 13]
+        java: [11, 13]
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK
@@ -28,3 +28,24 @@ jobs:
             ${{ runner.os }}-jdk-${{ matrix.java }}-maven-
       - name: Build it with Maven
         run: mvn -B verify -Pqulice
+  xcop-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: g4s8/xcop-action@master
+  pdd-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: g4s8/pdd-action@master
+  git-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: '20'
+      - name: Lint
+        uses: g4s8/gitlint-action@0.3.1
+        with:
+          since: "2020-05-25"
