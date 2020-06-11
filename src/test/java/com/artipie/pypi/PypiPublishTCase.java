@@ -64,7 +64,7 @@ public final class PypiPublishTCase {
         );
         final int port = server.start();
         Testcontainers.exposeHostPorts(port);
-        final CommonTestRuntimeWrapper runtime = new CommonTestRuntimeWrapper();
+        final PypiContainer runtime = new PypiContainer();
         runtime.bash(
             "python3 -m pip install --user --upgrade twine"
         );

@@ -32,11 +32,22 @@ import org.testcontainers.containers.GenericContainer;
  * A class with base utility  for tests, that instantiates container with python runtime.
  *
  * @since 0.2
- * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
- * @checkstyle LineLengthCheck (500 lines).
- * @checkstyle NonStaticMethodCheck (500 lines).
  */
-public class CommonTestRuntimeWrapper extends GenericContainer<CommonTestRuntimeWrapper> {
+@SuppressWarnings("PMD.ConstructorOnlyInitializesOrCallOtherConstructors")
+public class PypiContainer extends GenericContainer<PypiContainer> {
+
+    /**
+     * Ctor.
+     *  Construct container with python runtime and tools.
+     */
+    PypiContainer() {
+        super("python:3");
+        this.setCommand("tail", "-f", "/dev/null");
+        this.setWorkingDirectory("/home/");
+        this.withFileSystemBind("./src/test/resources", "/home");
+        this.withNetworkMode("host");
+        this.start();
+    }
 
     /**
      * Executes a bash command in a python container.
@@ -56,19 +67,5 @@ public class CommonTestRuntimeWrapper extends GenericContainer<CommonTestRuntime
         Logger.info(PypiCliITCase.class, exec.getStdout());
         Logger.info(PypiCliITCase.class, exec.getStderr());
         return exec.getStdout();
-    }
-
-    /**
-     * Construct container with python runtime and tools.
-     *
-     * @return Container object.
-     */
-    CommonTestRuntimeWrapper() {
-        super("python:3");
-        this.setCommand("tail", "-f", "/dev/null");
-        this.setWorkingDirectory("/home/");
-        this.withFileSystemBind("./src/test/resources", "/home");
-        this.withNetworkMode("host");
-        this.start();
     }
 }

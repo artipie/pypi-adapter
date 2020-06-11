@@ -51,7 +51,6 @@ public final class PypiCliITCase {
     /**
      * Test start docker container, set up all python utils and download python packege.
      * @param temp Path to temporary directory.
-     * @checkstyle MethodsOrderCheck (5 lines)
      */
     @Test
     public void pypiInstallWorks(@TempDir final Path temp)
@@ -63,7 +62,7 @@ public final class PypiCliITCase {
         );
         final int port = server.start();
         Testcontainers.exposeHostPorts(port);
-        final CommonTestRuntimeWrapper runtime = new CommonTestRuntimeWrapper();
+        final PypiContainer runtime = new PypiContainer();
         MatcherAssert.assertThat(
             runtime.bash(
             "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg"
@@ -82,7 +81,6 @@ public final class PypiCliITCase {
     /**
      * For debug and integration purpose add @Test annotation to the function and run that test.
      * @param temp Path to temporary directory.
-     * @checkstyle MethodsOrderCheck (5 lines)
      * @checkstyle MagicNumberCheck (20 lines)
      */
     public void pypiLongTermServerRun(@TempDir final Path temp)

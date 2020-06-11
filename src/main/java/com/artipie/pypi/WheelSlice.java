@@ -63,7 +63,10 @@ public final class WheelSlice implements Slice {
         final Publisher<ByteBuffer> publisher
     ) {
         return new AsyncResponse(
-            this.storage.save(new Key.From(this.name(line)), new Multipart(iterable, publisher).content())
+            this.storage.save(
+                new Key.From(this.name(line)),
+                new Multipart(iterable, publisher).content()
+            )
                 .thenApply(
                     ignored -> new RsWithStatus(RsStatus.CREATED)
                 )
@@ -77,7 +80,7 @@ public final class WheelSlice implements Slice {
      * @return Temp File name.
      * @checkstyle NonStaticMethodCheck (500 lines).
      */
-    public String name(final String line) {
-        return String.format("tmp%s.tar.gz", UUID.randomUUID().toString());
+    private String name(final String line) {
+        return String.format("tmp-%s-%s.tar.gz", line, UUID.randomUUID().toString());
     }
 }
