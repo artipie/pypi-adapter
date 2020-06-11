@@ -43,8 +43,8 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
  *
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle LineLengthCheck (500 lines).
  */
-@SuppressWarnings("PMD.SystemPrintln")
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
 public final class PypiCliITCase {
 
@@ -62,18 +62,19 @@ public final class PypiCliITCase {
         );
         final int port = server.start();
         Testcontainers.exposeHostPorts(port);
-        final PypiContainer runtime = new PypiContainer();
-        MatcherAssert.assertThat(
-            runtime.bash(
-            "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg"
-            ),
-            Matchers.startsWith("Looking in indexes: https://test.pypi.org/simple")
-        );
-        MatcherAssert.assertThat(
-            runtime.bash("python simplprg.py"),
-            Matchers.equalTo("Import test is ok\n")
-        );
-        runtime.stop();
+        try (PypiContainer runtime = new PypiContainer()) {
+            MatcherAssert.assertThat(
+                runtime.bash(
+                "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg"
+                ),
+                Matchers.startsWith("Looking in indexes: https://test.pypi.org/simple")
+            );
+            MatcherAssert.assertThat(
+                runtime.bash("python simplprg.py"),
+                Matchers.equalTo("Import test is ok\n")
+            );
+            runtime.stop();
+        }
         server.close();
         vertx.close();
     }
