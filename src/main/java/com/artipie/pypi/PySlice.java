@@ -84,6 +84,10 @@ public final class PySlice extends Slice.Wrap {
                     )
                 ),
                 new SliceRoute.Path(
+                    new RtRule.ByMethod(RqMethod.POST),
+                    new WheelSlice(storage)
+                ),
+                new SliceRoute.Path(
                     RtRule.FALLBACK,
                     new SliceSimple(
                         new RsWithStatus(RsStatus.NOT_FOUND)
