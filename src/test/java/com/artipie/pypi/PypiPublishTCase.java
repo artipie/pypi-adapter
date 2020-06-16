@@ -25,35 +25,37 @@ package com.artipie.pypi;
 
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.vertx.VertxSliceServer;
-import com.jcabi.log.Logger;
 import io.vertx.reactivex.core.Vertx;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
+import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.Testcontainers;
-import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 /**
- * A test which ensures {@code gem} console tool compatibility with the adapter.
+ * A test which ensures {@code python} console tool compatibility with the adapter.
  *
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle NonStaticMethodCheck (500 lines)
  * @checkstyle LineLengthCheck (500 lines).
  */
+@SuppressWarnings("PMD.SystemPrintln")
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
-public final class PypiCliITCase {
+public final class PypiPublishTCase {
 
     /**
-     * Test start docker container, set up all python utils and download python packege.
+     * Test start docker container, set up all python utils and publish python packeges.
      * @param temp Path to temporary directory.
+     * @checkstyle MethodsOrderCheck (5 lines)
+     * @throws IOException In case of network error
+     * @throws InterruptedException In case of network error or something else
      */
     @Test
-    public void pypiInstallWorks(@TempDir final Path temp)
+    public void pypiPublishWorks(@TempDir final Path temp)
         throws IOException, InterruptedException {
         final Vertx vertx = Vertx.vertx();
         final VertxSliceServer server = new VertxSliceServer(
@@ -63,41 +65,18 @@ public final class PypiCliITCase {
         final int port = server.start();
         Testcontainers.exposeHostPorts(port);
         try (PypiContainer runtime = new PypiContainer()) {
-            MatcherAssert.assertThat(
-                runtime.bash(
-                "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg"
-                ),
-                Matchers.startsWith("Looking in indexes: https://test.pypi.org/simple")
+            runtime.bash(
+                "python3 -m pip install --user --upgrade twine"
             );
             MatcherAssert.assertThat(
-                runtime.bash("python simplprg.py"),
-                Matchers.equalTo("Import test is ok\n")
+                runtime.bash(
+                    String.format("python3 -m twine upload --repository-url http://127.0.0.1:%s -u artem.lazarev -p pass --verbose example_pkg/dist/*", port)
+                ),
+                StringContains.containsString("Uploading distributions")
             );
             runtime.stop();
         }
         server.close();
         vertx.close();
     }
-
-    /**
-     * For debug and integration purpose add @Test annotation to the function and run that test.
-     * @param temp Path to temporary directory.
-     * @checkstyle MagicNumberCheck (20 lines)
-     */
-    public void pypiLongTermServerRun(@TempDir final Path temp)
-        throws IOException, InterruptedException {
-        FileUtils.copyDirectory(new File("./src/test/resources/example_pkg/dist"), temp.toFile());
-        final Vertx vertx = Vertx.vertx();
-        final VertxSliceServer server = new VertxSliceServer(
-            vertx,
-            new PySlice(new FileStorage(temp, vertx.fileSystem())),
-            8080
-        );
-        server.start();
-        Logger.debug(PypiCliITCase.class, "sleping...");
-        Thread.sleep(360_000);
-        server.close();
-        vertx.close();
-    }
-
 }

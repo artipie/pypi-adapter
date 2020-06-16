@@ -26,40 +26,61 @@ package com.artipie.pypi;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.http.Response;
+import com.artipie.http.Slice;
+import com.artipie.http.async.AsyncResponse;
+import com.artipie.http.rs.RsStatus;
+import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
-import java.util.concurrent.CompletableFuture;
+import java.util.Map;
+import java.util.UUID;
+import org.reactivestreams.Publisher;
 
 /**
- * BinaryArtifact.
+ * WheelSlice save and manage whl and tgz entries.
  *
- * @since 0.1
+ * @since 0.2
  */
-public final class BinaryArtifact implements Artifact {
+public final class WheelSlice implements Slice {
 
     /**
-     * Name of artifact.
+     * The Storage.
      */
-    private final String name;
-
-    /**
-     * Content of artifact.
-     */
-    private final Flow<ByteBuffer> content;
+    private final Storage storage;
 
     /**
      * Ctor.
      *
-     * @param name Name of artifact.
-     * @param content Content of artifact.
+     * @param storage Storage.
      */
-    public BinaryArtifact(final String name, final String content) {
-        this.name = name;
-        this.content = new ByteFlow(content);
+    public WheelSlice(final Storage storage) {
+        this.storage = storage;
     }
 
     @Override
-    public CompletableFuture<Void> save(final Storage storage) {
-        final String pkgname = this.name.split("-\\d.\\d.\\d.tar.gz")[0];
-        return storage.save(new Key.From(pkgname, this.name), this.content.value());
+    public Response response(final String line,
+        final Iterable<Map.Entry<String, String>> iterable,
+        final Publisher<ByteBuffer> publisher
+    ) {
+        return new AsyncResponse(
+            this.storage.save(
+                new Key.From(this.name(line)),
+                new Multipart(iterable, publisher).content()
+            )
+                .thenApply(
+                    ignored -> new RsWithStatus(RsStatus.CREATED)
+                )
+        );
+    }
+
+    /**
+     * Generate file name for temp file.
+     *
+     * @param line Params from request.
+     * @return Temp File name.
+     * @checkstyle NonStaticMethodCheck (500 lines).
+     */
+    private String name(final String line) {
+        return String.format("tmp-%s-%s.tar.gz", line, UUID.randomUUID().toString());
     }
 }
