@@ -37,7 +37,7 @@ import org.reactivestreams.Publisher;
  * SliceIndex returned formated html output with index of repository packages.
  *
  * @since 0.2
- * @todo #33:180min made implementation of class that provide preformated html with package lists.
+ * @todo #33:90min made implementation of class that provide preformated html with package lists.
  *  {@link SliceIndex#response(String, Iterable, Publisher)}.
  *  At this moment return empty html.
  */
