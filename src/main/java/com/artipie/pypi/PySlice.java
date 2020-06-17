@@ -90,7 +90,7 @@ public final class PySlice extends Slice.Wrap {
                     PySlice.pathGet(
                         "//",
                         new SliceWithHeaders(
-                            new LoggingSlice(new SliceIndex(storage)),
+                            new LoggingSlice(new SliceIndex()),
                             new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
                         )
                     ),
