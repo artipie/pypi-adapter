@@ -75,7 +75,7 @@ public final class PypiListTCase {
             );
             MatcherAssert.assertThat(
                 runtime.bash(
-                    String.format("pip list --index-url http://127.0.0.1:%s/simple/", port)
+                    String.format("pip list --index-url http://127.0.0.1:%s/", port)
                 ),
                 StringContains.containsString("artipietestpkg")
             );
