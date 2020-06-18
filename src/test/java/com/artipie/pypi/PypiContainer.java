@@ -50,6 +50,16 @@ public class PypiContainer extends GenericContainer<PypiContainer> {
     }
 
     /**
+     * Install tooling(twine).
+     *
+     * @throws IOException          If fails.
+     * @throws InterruptedException If fails.
+     */
+    public void installTooling() throws IOException, InterruptedException {
+        this.bash("python3 -m pip install --user --upgrade twine");
+    }
+
+    /**
      * Executes a bash command in a python container.
      *
      * @param command Bash command to execute.

@@ -30,32 +30,36 @@ import java.io.IOException;
 import java.nio.file.Path;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.StringContains;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.Testcontainers;
 
 /**
- * A test which ensures {@code python} console tool compatibility with the adapter.
+ * A test which ensures {@code python3 pip} console tool compatibility with
+ * the {@code list}  operation at the adapter.
  *
- * @since 0.1
+ * @since 0.2
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  * @checkstyle NonStaticMethodCheck (500 lines)
  * @checkstyle LineLengthCheck (500 lines).
  */
 @SuppressWarnings("PMD.SystemPrintln")
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
-public final class PypiPublishTCase {
+public final class PypiListTCase {
 
     /**
      * Test start docker container, set up all python utils and publish python packeges.
+     * After publish complete test perform {@code list} operation
      * @param temp Path to temporary directory.
      * @checkstyle MethodsOrderCheck (5 lines)
      * @throws IOException In case of network error
      * @throws InterruptedException In case of network error or something else
      */
     @Test
-    public void pypiPublishWorks(@TempDir final Path temp)
+    @Disabled
+    public void pypiListWorks(@TempDir final Path temp)
         throws IOException, InterruptedException {
         final Vertx vertx = Vertx.vertx();
         final VertxSliceServer server = new VertxSliceServer(
@@ -66,11 +70,14 @@ public final class PypiPublishTCase {
         Testcontainers.exposeHostPorts(port);
         try (PypiContainer runtime = new PypiContainer()) {
             runtime.installTooling();
+            runtime.bash(
+                String.format("python3 -m twine upload --repository-url http://127.0.0.1:%s -u artem.lazarev -p pass --verbose example_pkg/dist/*", port)
+            );
             MatcherAssert.assertThat(
                 runtime.bash(
-                    String.format("python3 -m twine upload --repository-url http://127.0.0.1:%s -u artem.lazarev -p pass --verbose example_pkg/dist/*", port)
+                    String.format("pip list --index-url http://127.0.0.1:%s/simple/", port)
                 ),
-                StringContains.containsString("Uploading distributions")
+                StringContains.containsString("artipietestpkg")
             );
             runtime.stop();
         }
