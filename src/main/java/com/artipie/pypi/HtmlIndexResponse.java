@@ -75,9 +75,9 @@ final class HtmlIndexResponse  implements Response {
             + this.packages.length()
             + FOOTER.length()
         );
-        buff.put(this.HEADER.getBytes(StandardCharsets.UTF_8))
+        buff.put(HtmlIndexResponse.HEADER.getBytes(StandardCharsets.UTF_8))
             .put(this.packages.getBytes(StandardCharsets.UTF_8))
-            .put(this.FOOTER.getBytes(StandardCharsets.UTF_8));
+            .put(HtmlIndexResponse.FOOTER.getBytes(StandardCharsets.UTF_8));
         return new RsWithBody(
             new RsWithHeaders(
                 new RsWithStatus(RsStatus.OK),
