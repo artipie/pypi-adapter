@@ -32,36 +32,58 @@ import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletionStage;
 
 /**
  * HtmlIndexResponse produce and format html index of the pypi repository.
  *
  * @since 0.2
+ * @todo #33:90min split {@link #send(Connection)} to 3 different stage of sending: HEADER,
+ *  content of repository and FOOTER. There is no requrements to send it in one response body.
+ *  But for tests purpose and speed up the development process i put it in 1 ByteBuffer now.
  */
 final class HtmlIndexResponse  implements Response {
 
     /**
+     * Header of the response HTML page.
+     */
+    private static final String HEADER = "<!DOCTYPE html>\n<html>\n  <body>";
+
+    /**
+     * Footer of the response HTML page.
+     */
+    private static final String FOOTER = "</body>\n</html>";
+
+    /**
      * Buffer with html formated package list.
      */
-    private final ByteBuffer buff;
+    private final String packages;
 
     /**
      * Ctor.
-     * @param buff Formated package list.
+     * @param packages Formated package list.
      */
-    protected HtmlIndexResponse(final ByteBuffer buff) {
-        this.buff = buff;
+    protected HtmlIndexResponse(final String packages) {
+        this.packages = packages;
     }
 
     @Override
     public CompletionStage<Void> send(final Connection connection) {
+        final ByteBuffer buff = ByteBuffer.allocate(
+            HEADER.length()
+            + this.packages.length()
+            + FOOTER.length()
+        );
+        buff.put(this.HEADER.getBytes(StandardCharsets.UTF_8))
+            .put(this.packages.getBytes(StandardCharsets.UTF_8))
+            .put(this.FOOTER.getBytes(StandardCharsets.UTF_8));
         return new RsWithBody(
             new RsWithHeaders(
                 new RsWithStatus(RsStatus.OK),
                 new Header("Content-Type", "text/html")
             ),
-            this.buff
+            buff
         ).send(connection);
     }
 }

@@ -28,7 +28,6 @@ import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.reactivestreams.Publisher;
@@ -49,11 +48,9 @@ public final class SliceIndex implements Slice {
         final Publisher<ByteBuffer> publisher
     ) {
         return new AsyncResponse(
-            CompletableFuture.completedStage(
-                new HtmlIndexResponse(
-                    ByteBuffer.wrap(
-                        " ".getBytes(StandardCharsets.UTF_8)
-                    )
+            CompletableFuture.supplyAsync(
+                () -> new HtmlIndexResponse(
+                    " "
                 )
             )
         );
