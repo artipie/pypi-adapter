@@ -33,7 +33,6 @@ import java.nio.file.Path;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
@@ -48,7 +47,18 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 public final class PypiCliITCase {
 
     /**
-     * Test start docker container, set up all python utils and download python packege.
+     * Marker from {@code pip} utility, that indicate operation is successful.
+     */
+    public static final String IMPORT_TEST_IS_OK = "Import test is ok\n";
+
+    /**
+     * Command for {@code python} utility, that compile example program
+     * with appropriate imports.
+     */
+    public static final String PYTHON_SIMPL_CMD = "python simplprg.py";
+
+    /**
+     * Test start docker container, set up all python utils and download python package.
      * @param temp Path to temporary directory.
      */
     @Test
@@ -69,8 +79,8 @@ public final class PypiCliITCase {
                 Matchers.startsWith("Looking in indexes: https://test.pypi.org/simple")
             );
             MatcherAssert.assertThat(
-                runtime.bash("python simplprg.py"),
-                Matchers.equalTo("Import test is ok\n")
+                runtime.bash(PypiCliITCase.PYTHON_SIMPL_CMD),
+                Matchers.equalTo(PypiCliITCase.IMPORT_TEST_IS_OK)
             );
             runtime.stop();
         }
@@ -102,8 +112,8 @@ public final class PypiCliITCase {
                 Matchers.containsString("Successfully installed artipietestpkg-0.0.3")
             );
             MatcherAssert.assertThat(
-                runtime.bash("python simplprg.py"),
-                Matchers.equalTo("Import test is ok\n")
+                runtime.bash(PypiCliITCase.PYTHON_SIMPL_CMD),
+                Matchers.equalTo(PypiCliITCase.IMPORT_TEST_IS_OK)
             );
             runtime.stop();
         }
