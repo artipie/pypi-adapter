@@ -28,8 +28,12 @@ import com.artipie.vertx.VertxSliceServer;
 import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
 import java.nio.file.Path;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.core.StringContains;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
@@ -37,7 +41,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.Testcontainers;
 
 /**
- * A test which ensures {@code python3 pip} console tool compatibility with
+ * A test which ensures repository compatibility with
  * the {@code list}  operation at the adapter.
  *
  * @since 0.2
@@ -70,14 +74,14 @@ public final class PypiListTCase {
         Testcontainers.exposeHostPorts(port);
         try (PypiContainer runtime = new PypiContainer()) {
             runtime.installTooling();
+            final String adr = String.format("http://127.0.0.1:%s", port);
             runtime.bash(
-                String.format("python3 -m twine upload --repository-url http://127.0.0.1:%s -u artem.lazarev -p pass --verbose example_pkg/dist/*", port)
+                String.format("python3 -m twine upload --repository-url %s -u artem.lazarev -p pass --verbose example_pkg/dist/*", adr)
             );
+            final HttpResponse response = HttpClientBuilder.create().build().execute(new HttpGet(adr));
             MatcherAssert.assertThat(
-                runtime.bash(
-                    String.format("pip list --index-url http://127.0.0.1:%s/", port)
-                ),
-                StringContains.containsString("artipietestpkg")
+                response.getStatusLine().getStatusCode(),
+                Matchers.equalTo(HttpStatus.SC_OK)
             );
             runtime.stop();
         }
