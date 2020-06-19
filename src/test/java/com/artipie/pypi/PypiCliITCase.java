@@ -45,7 +45,6 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  * @checkstyle LineLengthCheck (500 lines).
  */
-@DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
 public final class PypiCliITCase {
 
     /**
@@ -68,6 +67,39 @@ public final class PypiCliITCase {
                 "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg"
                 ),
                 Matchers.startsWith("Looking in indexes: https://test.pypi.org/simple")
+            );
+            MatcherAssert.assertThat(
+                runtime.bash("python simplprg.py"),
+                Matchers.equalTo("Import test is ok\n")
+            );
+            runtime.stop();
+        }
+        server.close();
+        vertx.close();
+    }
+
+    /**
+     * Test download and install python package with specific version.
+     * @param temp Path to temporary directory.
+     */
+    @Test
+    public void pypiInstallWithVersionWorks(@TempDir final Path temp)
+        throws IOException, InterruptedException {
+        final Vertx vertx = Vertx.vertx();
+        final VertxSliceServer server = new VertxSliceServer(
+            vertx,
+            new PySlice(new FileStorage(temp, vertx.fileSystem()))
+        );
+        final int port = server.start();
+        Testcontainers.exposeHostPorts(port);
+        final String command = String.format(
+            "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg%s",
+            "==0.0.3"
+        );
+        try (PypiContainer runtime = new PypiContainer()) {
+            MatcherAssert.assertThat(
+                runtime.bash(command),
+                Matchers.containsString("Successfully installed artipietestpkg-0.0.3")
             );
             MatcherAssert.assertThat(
                 runtime.bash("python simplprg.py"),
