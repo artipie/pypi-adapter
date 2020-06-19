@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
@@ -44,6 +45,7 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  * @checkstyle LineLengthCheck (500 lines).
  */
+@DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
 public final class PypiCliITCase {
 
     /**
