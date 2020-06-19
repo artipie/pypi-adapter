@@ -52,7 +52,7 @@ public final class PypiCliITCase {
      * @param temp Path to temporary directory.
      */
     @Test
-    public void pypiInstallWorks(@TempDir final Path temp)
+    public void pypiInstallLatestVersionWorks(@TempDir final Path temp)
         throws IOException, InterruptedException {
         final Vertx vertx = Vertx.vertx();
         final VertxSliceServer server = new VertxSliceServer(
