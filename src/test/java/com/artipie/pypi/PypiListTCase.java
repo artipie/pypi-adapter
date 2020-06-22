@@ -66,26 +66,25 @@ public final class PypiListTCase {
     public void pypiListWorks(@TempDir final Path temp)
         throws IOException, InterruptedException {
         final Vertx vertx = Vertx.vertx();
-        final VertxSliceServer server = new VertxSliceServer(
+        try (VertxSliceServer server = new VertxSliceServer(
             vertx,
             new PySlice(new FileStorage(temp, vertx.fileSystem()))
-        );
-        final int port = server.start();
-        Testcontainers.exposeHostPorts(port);
-        try (PypiContainer runtime = new PypiContainer()) {
-            runtime.installTooling();
-            final String adr = String.format("http://127.0.0.1:%s", port);
-            runtime.bash(
-                String.format("python3 -m twine upload --repository-url %s -u artem.lazarev -p pass --verbose example_pkg/dist/*", adr)
-            );
-            final HttpResponse response = HttpClientBuilder.create().build().execute(new HttpGet(adr));
-            MatcherAssert.assertThat(
-                response.getStatusLine().getStatusCode(),
-                Matchers.equalTo(HttpStatus.SC_OK)
-            );
-            runtime.stop();
+        )) {
+            final int port = server.start();
+            Testcontainers.exposeHostPorts(port);
+            try (PypiContainer runtime = new PypiContainer()) {
+                runtime.installTooling();
+                final String adr = String.format("http://127.0.0.1:%s", port);
+                runtime.bash(
+                    String.format("python3 -m twine upload --repository-url %s -u artem.lazarev -p pass --verbose example_pkg/dist/*", adr)
+                );
+                final HttpResponse response = HttpClientBuilder.create().build().execute(new HttpGet(adr));
+                MatcherAssert.assertThat(
+                    response.getStatusLine().getStatusCode(),
+                    Matchers.equalTo(HttpStatus.SC_OK)
+                );
+            }
         }
-        server.close();
         vertx.close();
     }
 }
