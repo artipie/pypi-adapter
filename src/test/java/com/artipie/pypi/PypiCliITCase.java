@@ -77,9 +77,17 @@ public final class PypiCliITCase {
             try (PypiContainer runtime = new PypiContainer()) {
                 MatcherAssert.assertThat(
                     runtime.bash(
-                    "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg"
+                        String.format(
+                            "pip install --user --index-url https://localhost:%s/pypi --no-deps artipietestpkg",
+                            port
+                        )
                     ),
-                    Matchers.startsWith("Looking in indexes: https://test.pypi.org/simple")
+                    Matchers.startsWith(
+                        String.format(
+                            "Looking in indexes: https://localhost:%s/pypi",
+                            port
+                        )
+                    )
                 );
                 MatcherAssert.assertThat(
                     runtime.bash(PypiCliITCase.PYTHON_SIMPL_CMD),
