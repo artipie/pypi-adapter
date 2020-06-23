@@ -46,7 +46,8 @@ import java.util.regex.Pattern;
  * PySlice.
  *
  * @since 0.1
- * @todo #33:90min add integrational test for auth functionality.
+ * @todo #33:90min We need to add integration test for auth functionality,
+ * and remove from PypiPublishTCase login and password parameters.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class PySlice extends Slice.Wrap {
