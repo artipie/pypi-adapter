@@ -27,6 +27,10 @@ package com.artipie.pypi;
 import com.artipie.asto.Storage;
 import com.artipie.http.Headers;
 import com.artipie.http.Slice;
+import com.artipie.http.auth.Identities;
+import com.artipie.http.auth.Permission;
+import com.artipie.http.auth.Permissions;
+import com.artipie.http.auth.SliceAuth;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
@@ -42,6 +46,7 @@ import java.util.regex.Pattern;
  * PySlice.
  *
  * @since 0.1
+ * @todo #33:90min add integrational test for auth functionality.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class PySlice extends Slice.Wrap {
@@ -49,20 +54,40 @@ public final class PySlice extends Slice.Wrap {
     /**
      * Content type.
      */
-    public static final String TEXT_HTML = "text/html";
+    private static final String TEXT_HTML = "text/html";
 
     /**
      * Constant for content type.
      */
-    public static final String CONTENT_TYPE = "content-type";
+    private static final String CONTENT_TYPE = "content-type";
+
+    /**
+     * Constant for download and list operations.
+     */
+    private static final String DOWNLOAD = "download";
+
+    /**
+     * Constant for uploading and delete operations.
+     */
+    private static final String UPLOAD = "upload";
+
+    /**
+     * Ctor.
+     * @param storage The storage and default parameters for free access.
+     */
+    public PySlice(final Storage storage) {
+        this(storage, Permissions.FREE, Identities.ANONYMOUS);
+    }
 
     /**
      * Ctor.
      *
      * @param storage Storage storage.
+     * @param perms Access permissions.
+     * @param users Concrete identities.
      * @checkstyle UnusedFormalParameter (4 lines)
      */
-    public PySlice(final Storage storage) {
+    public PySlice(final Storage storage, final Permissions perms, final Identities users) {
         super(
             new SliceRoute(
                 new SliceRoute.Path(
@@ -72,20 +97,32 @@ public final class PySlice extends Slice.Wrap {
                 PySlice.pathGet(
                     "^[a-zA-Z0-9]*.*\\.whl",
                     new SliceWithHeaders(
-                        new LoggingSlice(new SliceDownload(storage)),
+                        new SliceAuth(
+                            new LoggingSlice(new SliceDownload(storage)),
+                            new Permission.ByName(PySlice.DOWNLOAD, perms),
+                            users
+                        ),
                         new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
                     )
                 ),
                 PySlice.pathGet(
                     "^[a-zA-Z0-9]*.*\\.gz",
-                    new SliceWithHeaders(
-                        new LoggingSlice(new SliceDownload(storage)),
-                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
-                    )
+                        new SliceWithHeaders(
+                            new SliceAuth(
+                                new LoggingSlice(new SliceDownload(storage)),
+                                new Permission.ByName(PySlice.DOWNLOAD, perms),
+                                users
+                            ),
+                            new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
+                        )
                 ),
                 new SliceRoute.Path(
                     new RtRule.ByMethod(RqMethod.POST),
-                    new WheelSlice(storage)
+                    new SliceAuth(
+                        new WheelSlice(storage),
+                        new Permission.ByName(PySlice.UPLOAD, perms),
+                        users
+                    )
                 ),
                     PySlice.pathGet(
                         "//",
