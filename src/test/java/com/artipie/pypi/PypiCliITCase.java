@@ -49,33 +49,87 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 public final class PypiCliITCase {
 
     /**
-     * Test start docker container, set up all python utils and download python packege.
+     * Marker from {@code pip} utility, that indicate operation is successful.
+     */
+    private static final String IMPORT_TEST_IS_OK = "Import test is ok\n";
+
+    /**
+     * Command for {@code python} utility, that compile example program
+     * with appropriate imports.
+     */
+    private static final String PYTHON_SIMPL_CMD = "python simplprg.py";
+
+    /**
+     * Test start docker container, set up all python utils and download python package.
      * @param temp Path to temporary directory.
      */
     @Test
-    public void pypiInstallWorks(@TempDir final Path temp)
+    public void pypiInstallLatestVersionWorks(@TempDir final Path temp)
         throws IOException, InterruptedException {
         final Vertx vertx = Vertx.vertx();
-        final VertxSliceServer server = new VertxSliceServer(
+        try (VertxSliceServer server = new VertxSliceServer(
             vertx,
             new PySlice(new FileStorage(temp, vertx.fileSystem()))
-        );
-        final int port = server.start();
-        Testcontainers.exposeHostPorts(port);
-        try (PypiContainer runtime = new PypiContainer()) {
-            MatcherAssert.assertThat(
-                runtime.bash(
-                "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg"
-                ),
-                Matchers.startsWith("Looking in indexes: https://test.pypi.org/simple")
-            );
-            MatcherAssert.assertThat(
-                runtime.bash("python simplprg.py"),
-                Matchers.equalTo("Import test is ok\n")
-            );
-            runtime.stop();
+            )
+        ) {
+            final int port = server.start();
+            Testcontainers.exposeHostPorts(port);
+            try (PypiContainer runtime = new PypiContainer()) {
+                MatcherAssert.assertThat(
+                    runtime.bash(
+                        String.format(
+                            "pip install --user --index-url https://localhost:%s/pypi --no-deps artipietestpkg",
+                            port
+                        )
+                    ),
+                    Matchers.startsWith(
+                        String.format(
+                            "Looking in indexes: https://localhost:%s/pypi",
+                            port
+                        )
+                    )
+                );
+                MatcherAssert.assertThat(
+                    runtime.bash(PypiCliITCase.PYTHON_SIMPL_CMD),
+                    Matchers.equalTo(PypiCliITCase.IMPORT_TEST_IS_OK)
+                );
+                runtime.stop();
+            }
         }
-        server.close();
+        vertx.close();
+    }
+
+    /**
+     * Test download and install python package with specific version.
+     * @param temp Path to temporary directory.
+     */
+    @Test
+    public void pypiInstallWithVersionWorks(@TempDir final Path temp)
+        throws IOException, InterruptedException {
+        final Vertx vertx = Vertx.vertx();
+        try (VertxSliceServer server = new VertxSliceServer(
+            vertx,
+            new PySlice(new FileStorage(temp, vertx.fileSystem()))
+            )
+        ) {
+            final int port = server.start();
+            Testcontainers.exposeHostPorts(port);
+            final String command = String.format(
+                "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg%s",
+                "==0.0.3"
+            );
+            try (PypiContainer runtime = new PypiContainer()) {
+                MatcherAssert.assertThat(
+                    runtime.bash(command),
+                    Matchers.containsString("Successfully installed artipietestpkg-0.0.3")
+                );
+                MatcherAssert.assertThat(
+                    runtime.bash(PypiCliITCase.PYTHON_SIMPL_CMD),
+                    Matchers.equalTo(PypiCliITCase.IMPORT_TEST_IS_OK)
+                );
+                runtime.stop();
+            }
+        }
         vertx.close();
     }
 
