@@ -99,7 +99,7 @@ public final class PySlice extends Slice.Wrap {
                     "^[a-zA-Z0-9]*.*\\.whl",
                     new SliceWithHeaders(
                         new SliceAuth(
-                            new LoggingSlice(new SliceDownload(storage)),
+                            new SliceDownload(storage),
                             new Permission.ByName(PySlice.DOWNLOAD, perms),
                             users
                         ),
@@ -110,7 +110,7 @@ public final class PySlice extends Slice.Wrap {
                     "^[a-zA-Z0-9]*.*\\.gz",
                         new SliceWithHeaders(
                             new SliceAuth(
-                                new LoggingSlice(new SliceDownload(storage)),
+                                new SliceDownload(storage),
                                 new Permission.ByName(PySlice.DOWNLOAD, perms),
                                 users
                             ),
