@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
  * @since 0.1
  * @todo #33:90min We need to add integration test for auth functionality,
  *  and remove from PypiPublishTCase login and password parameters.
+ * @todo #33:90min Increase version of "com.artipie:http" at least to 0.11
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class PySlice extends Slice.Wrap {
@@ -66,11 +67,6 @@ public final class PySlice extends Slice.Wrap {
      * Constant for download and list operations.
      */
     private static final String DOWNLOAD = "download";
-
-    /**
-     * Constant for uploading and delete operations.
-     */
-    private static final String UPLOAD = "upload";
 
     /**
      * Ctor.
@@ -121,7 +117,7 @@ public final class PySlice extends Slice.Wrap {
                     new RtRule.ByMethod(RqMethod.POST),
                     new SliceAuth(
                         new WheelSlice(storage),
-                        new Permission.ByName(PySlice.UPLOAD, perms),
+                        new Permission.ByName("upload", perms),
                         users
                     )
                 ),
