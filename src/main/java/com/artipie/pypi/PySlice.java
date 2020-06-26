@@ -56,12 +56,12 @@ public final class PySlice extends Slice.Wrap {
     /**
      * Content type.
      */
-    private static final String TEXT_HTML = "text/html";
+    private static final String TEXT_HTML = "octet-stream";
 
     /**
      * Constant for content type.
      */
-    private static final String CONTENT_TYPE = "octet-stream";
+    private static final String CONTENT_TYPE = "content-type";
 
     /**
      * Constant for download and list operations.
