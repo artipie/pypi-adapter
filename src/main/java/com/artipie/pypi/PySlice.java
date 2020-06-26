@@ -61,7 +61,7 @@ public final class PySlice extends Slice.Wrap {
     /**
      * Constant for content type.
      */
-    private static final String CONTENT_TYPE = "content-type";
+    private static final String CONTENT_TYPE = "octet-stream";
 
     /**
      * Constant for download and list operations.
