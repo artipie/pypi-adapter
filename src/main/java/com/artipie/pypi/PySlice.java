@@ -56,7 +56,7 @@ public final class PySlice extends Slice.Wrap {
     /**
      * Content type.
      */
-    private static final String TEXT_HTML = "octet-stream";
+    private static final String TYPE_VALUE = "octet-stream";
 
     /**
      * Constant for content type.
@@ -99,7 +99,7 @@ public final class PySlice extends Slice.Wrap {
                             new Permission.ByName(PySlice.DOWNLOAD, perms),
                             users
                         ),
-                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
+                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TYPE_VALUE)
                     )
                 ),
                 PySlice.pathGet(
@@ -110,7 +110,7 @@ public final class PySlice extends Slice.Wrap {
                                 new Permission.ByName(PySlice.DOWNLOAD, perms),
                                 users
                             ),
-                            new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
+                            new Headers.From(PySlice.CONTENT_TYPE, PySlice.TYPE_VALUE)
                         )
                 ),
                 new SliceRoute.Path(
@@ -125,7 +125,7 @@ public final class PySlice extends Slice.Wrap {
                         "//",
                         new SliceWithHeaders(
                             new LoggingSlice(new SliceIndex()),
-                            new Headers.From(PySlice.CONTENT_TYPE, PySlice.TEXT_HTML)
+                            new Headers.From(PySlice.CONTENT_TYPE, PySlice.TYPE_VALUE)
                         )
                     ),
                 new SliceRoute.Path(
