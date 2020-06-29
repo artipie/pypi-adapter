@@ -22,30 +22,36 @@
  * SOFTWARE.
  */
 
-package com.artipie.pypi;
+package com.artipie.pypi.http;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Test;
+import com.artipie.http.Response;
+import com.artipie.http.Slice;
+import com.artipie.http.async.AsyncResponse;
+import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import org.reactivestreams.Publisher;
 
 /**
- * ArtifactMetaTest.
+ * SliceIndex returned formated html output with index of repository packages.
  *
- * @since 0.1
+ * @since 0.2
+ * @todo #33:90min made implementation of class that provide preformated html with package lists.
+ *  {@link SliceIndex#response(String, Iterable, Publisher)}.
+ *  At this moment return empty html.
  */
-public class ArtifactMetaTest {
+final class SliceIndex implements Slice {
 
-    /**
-     * Simple test.
-     *
-     * @checkstyle LineLengthCheck (8 lines).
-     */
-    @Test
-    public void simple() {
-        MatcherAssert.assertThat(
-            new ArtifactMeta("name-1.0.0").html(),
-            Matchers.equalTo(
-                "<tr><td><a href=\"name-1.0.0.tar.gz\">name-1.0.0.tar.gz</a></td></tr>"
+    @Override
+    public Response response(final String line,
+        final Iterable<Map.Entry<String, String>> iterable,
+        final Publisher<ByteBuffer> publisher
+    ) {
+        return new AsyncResponse(
+            CompletableFuture.supplyAsync(
+                () -> new HtmlIndexResponse(
+                    " "
+                )
             )
         );
     }

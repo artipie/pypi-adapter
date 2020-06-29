@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.pypi;
+package com.artipie.pypi.http;
 
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
