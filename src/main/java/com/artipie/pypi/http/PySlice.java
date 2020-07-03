@@ -85,55 +85,55 @@ public final class PySlice extends Slice.Wrap {
      */
     public PySlice(final Storage storage, final Permissions perms, final Identities users) {
         super(
-                new SliceRoute(
-                        new SliceRoute.Path(
-                                new RtRule.ByMethod(RqMethod.GET),
-                                new SliceDownload(storage)
+            new SliceRoute(
+                new SliceRoute.Path(
+                    new RtRule.ByMethod(RqMethod.GET),
+                    new SliceDownload(storage)
+                ),
+                PySlice.pathGet(
+                    "^[a-zA-Z0-9]*.*\\.whl",
+                    new SliceWithHeaders(
+                        new SliceAuth(
+                            new SliceDownload(storage),
+                            new Permission.ByName(PySlice.DOWNLOAD, perms),
+                            users
                         ),
-                        PySlice.pathGet(
-                                "^[a-zA-Z0-9]*.*\\.whl",
-                                new SliceWithHeaders(
-                                        new SliceAuth(
-                                                new SliceDownload(storage),
-                                                new Permission.ByName(PySlice.DOWNLOAD, perms),
-                                                users
-                                        ),
-                                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TYPE_VALUE)
-                                )
+                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TYPE_VALUE)
+                    )
+                ),
+                PySlice.pathGet(
+                    "^[a-zA-Z0-9]*.*\\.gz",
+                    new SliceWithHeaders(
+                        new SliceAuth(
+                            new SliceDownload(storage),
+                            new Permission.ByName(PySlice.DOWNLOAD, perms),
+                            users
                         ),
-                        PySlice.pathGet(
-                                "^[a-zA-Z0-9]*.*\\.gz",
-                                new SliceWithHeaders(
-                                        new SliceAuth(
-                                                new SliceDownload(storage),
-                                                new Permission.ByName(PySlice.DOWNLOAD, perms),
-                                                users
-                                        ),
-                                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TYPE_VALUE)
-                                )
-                        ),
-                        new SliceRoute.Path(
-                                new RtRule.ByMethod(RqMethod.POST),
-                                new SliceAuth(
-                                        new WheelSlice(storage),
-                                        new Permission.ByName("upload", perms),
-                                        users
-                                )
-                        ),
-                        PySlice.pathGet(
-                                "//",
-                                new SliceWithHeaders(
-                                        new LoggingSlice(new SliceIndex()),
-                                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TYPE_VALUE)
-                                )
-                        ),
-                        new SliceRoute.Path(
-                                RtRule.FALLBACK,
-                                new SliceSimple(
-                                        new RsWithStatus(RsStatus.NOT_FOUND)
-                                )
-                        )
+                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TYPE_VALUE)
+                    )
+                ),
+                new SliceRoute.Path(
+                    new RtRule.ByMethod(RqMethod.POST),
+                    new SliceAuth(
+                        new WheelSlice(storage),
+                        new Permission.ByName("upload", perms),
+                        users
+                    )
+                ),
+                PySlice.pathGet(
+                    "//",
+                    new SliceWithHeaders(
+                        new LoggingSlice(new SliceIndex()),
+                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TYPE_VALUE)
+                    )
+                ),
+                new SliceRoute.Path(
+                    RtRule.FALLBACK,
+                    new SliceSimple(
+                        new RsWithStatus(RsStatus.NOT_FOUND)
+                    )
                 )
+            )
         );
     }
 
@@ -146,11 +146,11 @@ public final class PySlice extends Slice.Wrap {
      */
     private static SliceRoute.Path pathGet(final String pattern, final Slice slice) {
         return new SliceRoute.Path(
-                new RtRule.Multiple(
-                        new RtRule.ByPath(Pattern.compile(pattern)),
-                        new RtRule.ByMethod(RqMethod.GET)
-                ),
-                new LoggingSlice(slice)
+            new RtRule.Multiple(
+                new RtRule.ByPath(Pattern.compile(pattern)),
+                new RtRule.ByMethod(RqMethod.GET)
+            ),
+            new LoggingSlice(slice)
         );
     }
 }
