@@ -22,33 +22,9 @@
  * SOFTWARE.
  */
 
-package com.artipie.pypi;
-
-import java.nio.ByteBuffer;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Test;
-
 /**
- * ByteFlowTest.
+ * Pypi files.
  *
  * @since 0.1
  */
-public class ByteFlowTest {
-    /**
-     * To string test.
-     */
-    @Test
-    public void toStringWorks() {
-        final String string = "string";
-        MatcherAssert.assertThat(
-            new ByteFlow(string).toString(),
-            Matchers.equalTo(string)
-        );
-        final byte data = 0x02;
-        MatcherAssert.assertThat(
-            new ByteFlow(ByteBuffer.wrap(new byte[]{data})).toString(),
-            Matchers.equalTo("\u0002")
-        );
-    }
-}
+package com.artipie.pypi.http;

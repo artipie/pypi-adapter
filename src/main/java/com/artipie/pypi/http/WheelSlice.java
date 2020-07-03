@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package com.artipie.pypi;
+package com.artipie.pypi.http;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
@@ -41,7 +41,7 @@ import org.reactivestreams.Publisher;
  *
  * @since 0.2
  */
-public final class WheelSlice implements Slice {
+final class WheelSlice implements Slice {
 
     /**
      * The Storage.
@@ -53,7 +53,7 @@ public final class WheelSlice implements Slice {
      *
      * @param storage Storage.
      */
-    public WheelSlice(final Storage storage) {
+    WheelSlice(final Storage storage) {
         this.storage = storage;
     }
 
@@ -66,10 +66,7 @@ public final class WheelSlice implements Slice {
             this.storage.save(
                 new Key.From(this.name(line)),
                 new Multipart(iterable, publisher).content()
-            )
-                .thenApply(
-                    ignored -> new RsWithStatus(RsStatus.CREATED)
-                )
+            ).thenApply(ignored -> new RsWithStatus(RsStatus.CREATED))
         );
     }
 

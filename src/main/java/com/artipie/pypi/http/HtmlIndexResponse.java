@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package com.artipie.pypi;
+package com.artipie.pypi.http;
 
 import com.artipie.http.Connection;
 import com.artipie.http.Response;

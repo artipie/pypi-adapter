@@ -6,3 +6,6 @@ node_modules/
 /src/test/resources/testproject/
 /src/test/resources/example_pkg/artipietestpkg.egg-info/
 /src/test/resources/example_pkg/build/bdist.linux-x86_64/
+.classpath
+.project
+.settings/**

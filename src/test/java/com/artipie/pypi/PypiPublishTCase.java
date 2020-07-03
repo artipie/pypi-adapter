@@ -24,6 +24,7 @@
 package com.artipie.pypi;
 
 import com.artipie.asto.fs.FileStorage;
+import com.artipie.pypi.http.PySlice;
 import com.artipie.vertx.VertxSliceServer;
 import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
