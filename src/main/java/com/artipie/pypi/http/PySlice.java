@@ -27,32 +27,45 @@ package com.artipie.pypi.http;
 import com.artipie.asto.Storage;
 import com.artipie.http.Headers;
 import com.artipie.http.Slice;
-import com.artipie.http.auth.Authentication;
-import com.artipie.http.auth.BasicIdentities;
 import com.artipie.http.auth.Identities;
 import com.artipie.http.auth.Permission;
 import com.artipie.http.auth.Permissions;
 import com.artipie.http.auth.SliceAuth;
 import com.artipie.http.rq.RqMethod;
-import com.artipie.http.rs.ContentType;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rt.RtRule;
-import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
 import com.artipie.http.slice.LoggingSlice;
 import com.artipie.http.slice.SliceDownload;
 import com.artipie.http.slice.SliceSimple;
 import com.artipie.http.slice.SliceWithHeaders;
+import java.util.regex.Pattern;
 
 /**
- * PyPi HTTP entry point.
+ * PySlice.
  *
- * @since 0.2
+ * @since 0.1
+ * @todo #33:90min We need to add integration test for auth functionality,
+ *  and remove from PypiPublishTCase login and password parameters.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class PySlice extends Slice.Wrap {
+
+    /**
+     * Content type.
+     */
+    private static final String TYPE_VALUE = "octet-stream";
+
+    /**
+     * Constant for content type.
+     */
+    private static final String CONTENT_TYPE = "content-type";
+
+    /**
+     * Constant for download and list operations.
+     */
+    private static final String DOWNLOAD = "download";
 
     /**
      * Ctor.
@@ -63,79 +76,81 @@ public final class PySlice extends Slice.Wrap {
     }
 
     /**
-     * Ctor used by Artipie server which knows `Authentication` implementation.
-     * @param storage The storage and default parameters for free access.
+     * Ctor.
+     *
+     * @param storage Storage storage.
      * @param perms Access permissions.
-     * @param auth Auth details.
+     * @param users Concrete identities.
+     * @checkstyle UnusedFormalParameter (4 lines)
      */
-    public PySlice(final Storage storage, final Permissions perms, final Authentication auth) {
-        this(storage, perms, new BasicIdentities(auth));
+    public PySlice(final Storage storage, final Permissions perms, final Identities users) {
+        super(
+                new SliceRoute(
+                        new SliceRoute.Path(
+                                new RtRule.ByMethod(RqMethod.GET),
+                                new SliceDownload(storage)
+                        ),
+                        PySlice.pathGet(
+                                "^[a-zA-Z0-9]*.*\\.whl",
+                                new SliceWithHeaders(
+                                        new SliceAuth(
+                                                new SliceDownload(storage),
+                                                new Permission.ByName(PySlice.DOWNLOAD, perms),
+                                                users
+                                        ),
+                                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TYPE_VALUE)
+                                )
+                        ),
+                        PySlice.pathGet(
+                                "^[a-zA-Z0-9]*.*\\.gz",
+                                new SliceWithHeaders(
+                                        new SliceAuth(
+                                                new SliceDownload(storage),
+                                                new Permission.ByName(PySlice.DOWNLOAD, perms),
+                                                users
+                                        ),
+                                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TYPE_VALUE)
+                                )
+                        ),
+                        new SliceRoute.Path(
+                                new RtRule.ByMethod(RqMethod.POST),
+                                new SliceAuth(
+                                        new WheelSlice(storage),
+                                        new Permission.ByName("upload", perms),
+                                        users
+                                )
+                        ),
+                        PySlice.pathGet(
+                                "//",
+                                new SliceWithHeaders(
+                                        new LoggingSlice(new SliceIndex()),
+                                        new Headers.From(PySlice.CONTENT_TYPE, PySlice.TYPE_VALUE)
+                                )
+                        ),
+                        new SliceRoute.Path(
+                                RtRule.FALLBACK,
+                                new SliceSimple(
+                                        new RsWithStatus(RsStatus.NOT_FOUND)
+                                )
+                        )
+                )
+        );
     }
 
     /**
-     * Primary ctor.
-     * @param storage The storage.
-     * @param perms Access permissions.
-     * @param auth Concrete identities.
+     * This method simply encapsulates all the RtRule instantiations.
+     *
+     * @param pattern Route pattern
+     * @param slice Slice implementation
+     * @return Path route slice
      */
-    private PySlice(final Storage storage, final Permissions perms, final Identities auth) {
-        super(
-            new SliceRoute(
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByMethod(RqMethod.GET),
-                        new RtRule.ByPath("^[a-zA-Z0-9]*.*\\.whl")
-                    ),
-                    new SliceAuth(
-                        new SliceWithHeaders(
-                            new LoggingSlice(new SliceDownload(storage)),
-                            new Headers.From(new ContentType("application/octet-stream"))
-                        ),
-                        new Permission.ByName("download", perms),
-                        auth
-                    )
+    private static SliceRoute.Path pathGet(final String pattern, final Slice slice) {
+        return new SliceRoute.Path(
+                new RtRule.Multiple(
+                        new RtRule.ByPath(Pattern.compile(pattern)),
+                        new RtRule.ByMethod(RqMethod.GET)
                 ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByMethod(RqMethod.GET),
-                        new RtRule.ByPath("^[a-zA-Z0-9]*.*\\.gz")
-                    ),
-                    new SliceAuth(
-                        new SliceWithHeaders(
-                            new LoggingSlice(new SliceDownload(storage)),
-                            new Headers.From(new ContentType("application/octet-stream"))
-                        ),
-                        new Permission.ByName("download", perms),
-                        auth
-                    )
-                ),
-                new RtRulePath(
-                    new RtRule.ByMethod(RqMethod.POST),
-                    new SliceAuth(
-                        new WheelSlice(storage),
-                        new Permission.ByName("upload", perms),
-                        auth
-                    )
-                ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByMethod(RqMethod.GET),
-                        new RtRule.ByPath("//")
-                    ),
-                    new SliceAuth(
-                        new SliceWithHeaders(
-                            new LoggingSlice(new SliceIndex()),
-                            new Headers.From(new ContentType("text/html"))
-                        ),
-                        new Permission.ByName("download", perms),
-                        auth
-                    )
-                ),
-                new RtRulePath(
-                    RtRule.FALLBACK,
-                    new SliceSimple(new RsWithStatus(RsStatus.NOT_FOUND))
-                )
-            )
+                new LoggingSlice(slice)
         );
     }
 }
