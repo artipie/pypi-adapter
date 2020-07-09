@@ -70,7 +70,7 @@ public final class PypiCliITCase {
         final Vertx vertx = Vertx.vertx();
         try (VertxSliceServer server = new VertxSliceServer(
             vertx,
-            new PySlice(new FileStorage(temp, vertx.fileSystem()))
+            new PySlice(new FileStorage(temp))
             )
         ) {
             final int port = server.start();
@@ -110,7 +110,7 @@ public final class PypiCliITCase {
         final Vertx vertx = Vertx.vertx();
         try (VertxSliceServer server = new VertxSliceServer(
             vertx,
-            new PySlice(new FileStorage(temp, vertx.fileSystem()))
+            new PySlice(new FileStorage(temp))
             )
         ) {
             final int port = server.start();
@@ -145,7 +145,7 @@ public final class PypiCliITCase {
         final Vertx vertx = Vertx.vertx();
         final VertxSliceServer server = new VertxSliceServer(
             vertx,
-            new PySlice(new FileStorage(temp, vertx.fileSystem())),
+            new PySlice(new FileStorage(temp)),
             8080
         );
         server.start();

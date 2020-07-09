@@ -46,30 +46,18 @@ import org.testcontainers.Testcontainers;
  * the {@code list}  operation at the adapter.
  *
  * @since 0.2
- * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  * @checkstyle NonStaticMethodCheck (500 lines)
- * @checkstyle LineLengthCheck (500 lines).
  */
-@SuppressWarnings("PMD.SystemPrintln")
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
-public final class PypiListTCase {
+public final class PypiListITCase {
 
-    /**
-     * Test start docker container, set up all python utils and publish python packeges.
-     * After publish complete test perform {@code list} operation
-     * @param temp Path to temporary directory.
-     * @checkstyle MethodsOrderCheck (5 lines)
-     * @throws IOException In case of network error
-     * @throws InterruptedException In case of network error or something else
-     */
-    @Test
     @Disabled
-    public void pypiListWorks(@TempDir final Path temp)
-        throws IOException, InterruptedException {
+    @Test
+    void pypiListWorks(@TempDir final Path temp) throws IOException, InterruptedException {
         final Vertx vertx = Vertx.vertx();
         try (VertxSliceServer server = new VertxSliceServer(
             vertx,
-            new PySlice(new FileStorage(temp, vertx.fileSystem()))
+            new PySlice(new FileStorage(temp))
         )) {
             final int port = server.start();
             Testcontainers.exposeHostPorts(port);
@@ -77,9 +65,11 @@ public final class PypiListTCase {
                 runtime.installTooling();
                 final String adr = String.format("http://127.0.0.1:%s", port);
                 runtime.bash(
-                    String.format("python3 -m twine upload --repository-url %s -u artem.lazarev -p pass --verbose example_pkg/dist/*", adr)
+                    // @checkstyle LineLengthCheck (1 line)
+                    String.format("python3 -m twine upload --repository-url %s -u artem.lazarev -p pass --verbose example_pkg/dist/*", runtime.localAddress(port))
                 );
-                final HttpResponse response = HttpClientBuilder.create().build().execute(new HttpGet(adr));
+                final HttpResponse response = HttpClientBuilder.create()
+                    .build().execute(new HttpGet(adr));
                 MatcherAssert.assertThat(
                     response.getStatusLine().getStatusCode(),
                     Matchers.equalTo(HttpStatus.SC_OK)

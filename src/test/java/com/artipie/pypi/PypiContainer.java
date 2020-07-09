@@ -34,7 +34,7 @@ import org.testcontainers.containers.GenericContainer;
  * @since 0.2
  */
 @SuppressWarnings("PMD.ConstructorOnlyInitializesOrCallOtherConstructors")
-public class PypiContainer extends GenericContainer<PypiContainer> {
+public final class PypiContainer extends GenericContainer<PypiContainer> {
 
     /**
      * Ctor.
@@ -45,7 +45,6 @@ public class PypiContainer extends GenericContainer<PypiContainer> {
         this.setCommand("tail", "-f", "/dev/null");
         this.setWorkingDirectory("/home/");
         this.withFileSystemBind("./src/test/resources", "/home");
-        this.withNetworkMode("host");
         this.start();
     }
 
@@ -67,7 +66,7 @@ public class PypiContainer extends GenericContainer<PypiContainer> {
      * @throws IOException          If fails.
      * @throws InterruptedException If fails.
      */
-    protected String bash(final String command)
+    public String bash(final String command)
         throws IOException, InterruptedException {
         final Container.ExecResult exec =  this.execInContainer(
             "/bin/bash",
@@ -77,5 +76,15 @@ public class PypiContainer extends GenericContainer<PypiContainer> {
         Logger.info(PypiCliITCase.class, exec.getStdout());
         Logger.info(PypiCliITCase.class, exec.getStderr());
         return exec.getStdout();
+    }
+
+    /**
+     * Address to access local port from the docker container.
+     * @param port Port
+     * @return Address
+     * @checkstyle NonStaticMethodCheck (10 lines)
+     */
+    public String localAddress(final int port) {
+        return String.format("http://host.testcontainers.internal:%d/", port);
     }
 }
