@@ -29,8 +29,9 @@ import com.artipie.vertx.VertxSliceServer;
 import io.vertx.reactivex.core.Vertx;
 import java.io.IOException;
 import java.nio.file.Path;
+import org.cactoos.list.ListOf;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.core.StringContains;
+import org.hamcrest.text.StringContainsInOrder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
@@ -40,28 +41,17 @@ import org.testcontainers.Testcontainers;
  * A test which ensures {@code python} console tool compatibility with the adapter.
  *
  * @since 0.1
- * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
- * @checkstyle NonStaticMethodCheck (500 lines)
- * @checkstyle LineLengthCheck (500 lines).
  */
-@SuppressWarnings("PMD.SystemPrintln")
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
-public final class PypiPublishTCase {
+public final class PypiPublishITCase {
 
-    /**
-     * Test start docker container, set up all python utils and publish python packeges.
-     * @param temp Path to temporary directory.
-     * @checkstyle MethodsOrderCheck (5 lines)
-     * @throws IOException In case of network error
-     * @throws InterruptedException In case of network error or something else
-     */
     @Test
     public void pypiPublishWorks(@TempDir final Path temp)
         throws IOException, InterruptedException {
         final Vertx vertx = Vertx.vertx();
         final VertxSliceServer server = new VertxSliceServer(
-            vertx,
-            new PySlice(new FileStorage(temp, vertx.fileSystem()))
+            vertx, new PySlice(new FileStorage(temp))
         );
         final int port = server.start();
         Testcontainers.exposeHostPorts(port);
@@ -69,9 +59,15 @@ public final class PypiPublishTCase {
             runtime.installTooling();
             MatcherAssert.assertThat(
                 runtime.bash(
-                    String.format("python3 -m twine upload --repository-url http://127.0.0.1:%s -u artem.lazarev -p pass --verbose example_pkg/dist/*", port)
+                    // @checkstyle LineLengthCheck (1 line)
+                    String.format("python3 -m twine upload --repository-url %s -u artem.lazarev -p pass --verbose example_pkg/dist/*", runtime.localAddress(port))
                 ),
-                StringContains.containsString("Uploading distributions")
+                new StringContainsInOrder(
+                    new ListOf<String>(
+                        "Uploading artipietestpkg-0.0.3-py2-none-any.whl", "100%",
+                        "Uploading artipietestpkg-0.0.3.tar.gz", "100%"
+                    )
+                )
             );
             runtime.stop();
         }

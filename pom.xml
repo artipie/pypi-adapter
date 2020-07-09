@@ -69,7 +69,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>asto</artifactId>
-      <version>0.19.2</version>
+      <version>0.23.2</version>
     </dependency>
     <dependency>
       <groupId>com.artipie</groupId>
@@ -135,6 +135,19 @@ SOFTWARE.
         </configuration>
       </plugin>
     </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>com.qulice</groupId>
+          <artifactId>qulice-maven-plugin</artifactId>
+          <configuration>
+            <excludes combine.children="append">
+              <exclude>checkstyle:/src/test/resources/.*</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
   <profiles>
   </profiles>
