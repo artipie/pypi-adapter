@@ -23,6 +23,8 @@
  */
 package com.artipie.pypi;
 
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.pypi.http.PySlice;
 import com.artipie.vertx.VertxSliceServer;
@@ -31,6 +33,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import org.cactoos.list.ListOf;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsEqual;
 import org.hamcrest.text.StringContainsInOrder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
@@ -50,8 +53,9 @@ public final class PypiPublishITCase {
     public void pypiPublishWorks(@TempDir final Path temp)
         throws IOException, InterruptedException {
         final Vertx vertx = Vertx.vertx();
+        final Storage storage = new FileStorage(temp);
         final VertxSliceServer server = new VertxSliceServer(
-            vertx, new PySlice(new FileStorage(temp))
+            vertx, new PySlice(storage)
         );
         final int port = server.start();
         Testcontainers.exposeHostPorts(port);
@@ -68,6 +72,10 @@ public final class PypiPublishITCase {
                         "Uploading artipietestpkg-0.0.3.tar.gz", "100%"
                     )
                 )
+            );
+            MatcherAssert.assertThat(
+                storage.list(Key.ROOT).join().size(),
+                new IsEqual<>(2)
             );
             runtime.stop();
         }
