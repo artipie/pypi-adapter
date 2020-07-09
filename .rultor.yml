@@ -8,6 +8,7 @@ install: |
   export LC_ALL=en_US.UTF-8
   export LANG=en_US.UTF-8
   export LANGUAGE=en_US.UTF-8
+  pdd -f /dev/null
 merge:
   script: |
     echo We don't merge via Rultor
@@ -20,7 +21,6 @@ release:
   sensitive:
     - settings.xml
   script: |-
-    pdd -f /dev/null
     gpg --import /home/r/pubring.gpg
     gpg --allow-secret-key-import --no-tty --batch --import /home/r/secring.gpg
     mvn versions:set "-DnewVersion=${tag}" --settings ../settings.xml
