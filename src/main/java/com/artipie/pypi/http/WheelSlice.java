@@ -24,6 +24,7 @@
 
 package com.artipie.pypi.http;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.http.Response;
@@ -33,7 +34,8 @@ import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
 /**
@@ -42,6 +44,12 @@ import org.reactivestreams.Publisher;
  * @since 0.2
  */
 final class WheelSlice implements Slice {
+
+    /**
+     * Pattern to obtain package name from uploaded file name: for file name
+     * 'artipietestpkg-0.0.3.tar.gz', then package name is 'artipietestpkg'.
+     */
+    private static final Pattern PKG_NAME = Pattern.compile("(.*?)-.*");
 
     /**
      * The Storage.
@@ -58,26 +66,33 @@ final class WheelSlice implements Slice {
     }
 
     @Override
-    public Response response(final String line,
+    public Response response(
+        final String line,
         final Iterable<Map.Entry<String, String>> iterable,
         final Publisher<ByteBuffer> publisher
     ) {
         return new AsyncResponse(
-            this.storage.save(
-                new Key.From(this.name(line)),
-                new Multipart(iterable, publisher).content()
-            ).thenApply(ignored -> new RsWithStatus(RsStatus.CREATED))
+            new Multipart(iterable, publisher).content().thenApply(
+                data -> this.storage.save(
+                    WheelSlice.key(data.fileName()),
+                    new Content.From(data.bytes())
+                )
+            ).thenApply(
+                ignored -> new RsWithStatus(RsStatus.CREATED)
+            )
         );
     }
 
     /**
-     * Generate file name for temp file.
-     *
-     * @param line Params from request.
-     * @return Temp File name.
-     * @checkstyle NonStaticMethodCheck (500 lines).
+     * Key from filename.
+     * @param filename Filename
+     * @return Storage key
      */
-    private String name(final String line) {
-        return String.format("tmp-%s-%s.tar.gz", line, UUID.randomUUID().toString());
+    private static Key key(final String filename) {
+        final Matcher matcher = PKG_NAME.matcher(filename);
+        if (matcher.matches()) {
+            return new Key.From(matcher.group(1), filename);
+        }
+        throw new IllegalArgumentException("Invalid file");
     }
 }

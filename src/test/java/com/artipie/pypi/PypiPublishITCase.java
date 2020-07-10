@@ -44,6 +44,7 @@ import org.testcontainers.Testcontainers;
  * A test which ensures {@code python} console tool compatibility with the adapter.
  *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
@@ -74,8 +75,14 @@ public final class PypiPublishITCase {
                 )
             );
             MatcherAssert.assertThat(
-                storage.list(Key.ROOT).join().size(),
-                new IsEqual<>(2)
+                storage.exists(
+                    new Key.From("artipietestpkg", "artipietestpkg-0.0.3-py2-none-any.whl")
+                ).join()
+                &&
+                storage.exists(
+                    new Key.From("artipietestpkg", "artipietestpkg-0.0.3.tar.gz")
+                ).join(),
+                new IsEqual<>(true)
             );
             runtime.stop();
         }
