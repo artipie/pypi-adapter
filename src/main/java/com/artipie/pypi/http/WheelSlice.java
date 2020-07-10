@@ -46,7 +46,8 @@ import org.reactivestreams.Publisher;
 final class WheelSlice implements Slice {
 
     /**
-     * Package name.
+     * Pattern to obtain package name from uploaded file name: for file name
+     * 'artipietestpkg-0.0.3.tar.gz', then package name is 'artipietestpkg'.
      */
     private static final Pattern PKG_NAME = Pattern.compile("(.*?)-.*");
 

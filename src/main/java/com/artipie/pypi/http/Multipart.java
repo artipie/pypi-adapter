@@ -55,7 +55,7 @@ final class Multipart {
     private static final int BUFFER = 4096;
 
     /**
-     * Uploaded file name.
+     * Pattern to obtain filename from multipart header.
      */
     private static final Pattern FILENAME = Pattern.compile(".*filename=\"(.*)\"\\X*");
 
