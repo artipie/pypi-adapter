@@ -26,6 +26,7 @@ package com.artipie.pypi.http;
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,6 +34,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletionStage;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.fileupload.ParameterParser;
@@ -49,6 +53,11 @@ final class Multipart {
      * Size of multipart stream buffer.
      */
     private static final int BUFFER = 4096;
+
+    /**
+     * Uploaded file name.
+     */
+    private static final Pattern FILENAME = Pattern.compile(".*filename=\"(.*)\"\\X*");
 
     /**
      * Request headers.
@@ -77,19 +86,17 @@ final class Multipart {
     /**
      * Read content of file.
      *
-     * @return Content.
+     * @return Data.
      */
-    public Content content() {
-        return new Content.From(
-            new Concatenation(this.body)
-                .single()
-                .map(Remaining::new)
-                .map(Remaining::bytes)
-                .map(ByteArrayInputStream::new)
-                .map(input -> new MultipartStream(input, this.boundary(), Multipart.BUFFER, null))
-                .map(Multipart::content)
-                .toFlowable()
-        );
+    public CompletionStage<Data> content() {
+        return new Concatenation(this.body)
+            .single()
+            .map(Remaining::new)
+            .map(Remaining::bytes)
+            .map(ByteArrayInputStream::new)
+            .map(input -> new MultipartStream(input, this.boundary(), Multipart.BUFFER, null))
+            .map(Multipart::content)
+            .to(SingleInterop.get());
     }
 
     /**
@@ -120,15 +127,17 @@ final class Multipart {
      * @param stream Multipart stream.
      * @return Binary content of file.
      */
-    private static ByteBuffer content(final MultipartStream stream) {
+    private static Data content(final MultipartStream stream) {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
             boolean next = stream.skipPreamble();
             while (next) {
                 final String header = stream.readHeaders();
                 if (header.contains("filename")) {
+                    final Matcher matcher = FILENAME.matcher(header);
                     stream.readBodyData(bos);
-                    return ByteBuffer.wrap(bos.toByteArray());
+                    matcher.matches();
+                    return new Data(matcher.group(1), bos.toByteArray());
                 }
                 stream.discardBodyData();
                 next = stream.readBoundary();
@@ -137,5 +146,49 @@ final class Multipart {
             throw new IllegalStateException("Failed to read body as multipart", ex);
         }
         throw new IllegalStateException("Body has no file data");
+    }
+
+    /**
+     * Data from {@link Multipart}.
+     * @since 0.3
+     */
+    @SuppressWarnings("PMD.ArrayIsStoredDirectly")
+    static final class Data {
+
+        /**
+         * File name.
+         */
+        private final String fname;
+
+        /**
+         * Multipart body.
+         */
+        private final byte[] buffer;
+
+        /**
+         * Ctor.
+         * @param filename Filename
+         * @param buffer Content
+         */
+        Data(final String filename, final byte[] buffer) {
+            this.fname = filename;
+            this.buffer = buffer;
+        }
+
+        /**
+         * Filename.
+         * @return Name of the file
+         */
+        public String fileName() {
+            return this.fname;
+        }
+
+        /**
+         * Content.
+         * @return Instance of {@link Content}
+         */
+        public byte[] bytes() {
+            return this.buffer;
+        }
     }
 }
