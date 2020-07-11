@@ -23,136 +23,182 @@
  */
 package com.artipie.pypi;
 
+import com.artipie.asto.Content;
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
-import com.artipie.pypi.http.PySlice;
+import com.artipie.http.Headers;
+import com.artipie.http.Response;
+import com.artipie.http.Slice;
+import com.artipie.http.headers.ContentType;
+import com.artipie.http.rs.RsWithBody;
+import com.artipie.http.rs.RsWithHeaders;
+import com.artipie.http.slice.LoggingSlice;
+import com.artipie.http.slice.SliceDownload;
+import com.artipie.http.slice.SliceSimple;
+import com.artipie.http.slice.SliceWithHeaders;
 import com.artipie.vertx.VertxSliceServer;
-import com.jcabi.log.Logger;
 import io.vertx.reactivex.core.Vertx;
-import java.io.File;
-import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Map;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.StringContains;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
+import org.reactivestreams.Publisher;
 import org.testcontainers.Testcontainers;
-import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 /**
- * A test which ensures {@code gem} console tool compatibility with the adapter.
+ * A test which ensures {@code pip} console tool compatibility with the adapter.
  *
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
- * @checkstyle LineLengthCheck (500 lines).
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
 public final class PypiCliITCase {
 
     /**
-     * Marker from {@code pip} utility, that indicate operation is successful.
+     * Vertx.
      */
-    private static final String IMPORT_TEST_IS_OK = "Import test is ok\n";
+    private Vertx vertx;
 
-    /**
-     * Command for {@code python} utility, that compile example program
-     * with appropriate imports.
-     */
-    private static final String PYTHON_SIMPL_CMD = "python simplprg.py";
+    @BeforeEach
+    void start() {
+        this.vertx = Vertx.vertx();
+    }
 
-    /**
-     * Test start docker container, set up all python utils and download python package.
-     * @param temp Path to temporary directory.
-     */
+    @AfterEach
+    void stop() {
+        this.vertx.close();
+    }
+
     @Test
-    public void pypiInstallLatestVersionWorks(@TempDir final Path temp)
-        throws IOException, InterruptedException {
-        final Vertx vertx = Vertx.vertx();
-        try (VertxSliceServer server = new VertxSliceServer(
-            vertx,
-            new PySlice(new FileStorage(temp))
-            )
-        ) {
+    void pypiInstallLatestVersionWorks(@TempDir final Path temp) throws Exception {
+        final FileStorage storage = new FileStorage(temp);
+        final Fake slice = new Fake(storage);
+        this.putPackages(storage);
+        try (VertxSliceServer server = new VertxSliceServer(this.vertx, new LoggingSlice(slice))) {
             final int port = server.start();
             Testcontainers.exposeHostPorts(port);
             try (PypiContainer runtime = new PypiContainer()) {
                 MatcherAssert.assertThat(
                     runtime.bash(
                         String.format(
-                            "pip install --user --index-url https://localhost:%s/pypi --no-deps artipietestpkg",
-                            port
+                            // @checkstyle LineLengthCheck (1 line)
+                            "pip install  --index-url %s --no-deps --trusted-host host.testcontainers.internal alarmtime",
+                            runtime.localAddress(port)
                         )
                     ),
-                    Matchers.startsWith(
-                        String.format(
-                            "Looking in indexes: https://localhost:%s/pypi",
-                            port
-                        )
-                    )
-                );
-                MatcherAssert.assertThat(
-                    runtime.bash(PypiCliITCase.PYTHON_SIMPL_CMD),
-                    Matchers.equalTo(PypiCliITCase.IMPORT_TEST_IS_OK)
+                    new StringContains(true, "Successfully installed alarmtime-0.1.5")
                 );
                 runtime.stop();
             }
         }
-        vertx.close();
     }
 
-    /**
-     * Test download and install python package with specific version.
-     * @param temp Path to temporary directory.
-     */
     @Test
-    public void pypiInstallWithVersionWorks(@TempDir final Path temp)
-        throws IOException, InterruptedException {
-        final Vertx vertx = Vertx.vertx();
-        try (VertxSliceServer server = new VertxSliceServer(
-            vertx,
-            new PySlice(new FileStorage(temp))
-            )
-        ) {
+    void pypiInstallWithVersionWorks(@TempDir final Path temp) throws Exception {
+        final FileStorage storage = new FileStorage(temp);
+        this.putPackages(storage);
+        try (VertxSliceServer server = new VertxSliceServer(this.vertx, new Fake(storage))) {
             final int port = server.start();
             Testcontainers.exposeHostPorts(port);
-            final String command = String.format(
-                "pip install --user --index-url https://test.pypi.org/simple/ --no-deps artipietestpkg%s",
-                "==0.0.3"
-            );
             try (PypiContainer runtime = new PypiContainer()) {
                 MatcherAssert.assertThat(
-                    runtime.bash(command),
-                    Matchers.containsString("Successfully installed artipietestpkg-0.0.3")
-                );
-                MatcherAssert.assertThat(
-                    runtime.bash(PypiCliITCase.PYTHON_SIMPL_CMD),
-                    Matchers.equalTo(PypiCliITCase.IMPORT_TEST_IS_OK)
+                    runtime.bash(
+                        String.format(
+                            // @checkstyle LineLengthCheck (1 line)
+                            "pip install --index-url %s --no-deps --trusted-host host.testcontainers.internal \"alarmtime==0.1.5\"",
+                            runtime.localAddress(port)
+                        )
+                    ),
+                    Matchers.containsString("Successfully installed alarmtime-0.1.5")
                 );
                 runtime.stop();
             }
         }
-        vertx.close();
+    }
+
+    private void putPackages(final Storage storage) throws Exception {
+        storage.save(
+            new Key.From("alarmtime", "AlarmTime-0.1.5.tar.gz"),
+            new Content.From(
+                Files.readAllBytes(
+                    Paths.get(
+                        Thread.currentThread().getContextClassLoader()
+                        .getResource("pypi_repo/AlarmTime-0.1.5.tar.gz").toURI()
+                    )
+                )
+            )
+        ).join();
     }
 
     /**
-     * For debug and integration purpose add @Test annotation to the function and run that test.
-     * @param temp Path to temporary directory.
-     * @checkstyle MagicNumberCheck (20 lines)
+     * Fake slice for test.
+     * @since 0.3
      */
-    public void pypiLongTermServerRun(@TempDir final Path temp)
-        throws IOException, InterruptedException {
-        FileUtils.copyDirectory(new File("./src/test/resources/example_pkg/dist"), temp.toFile());
-        final Vertx vertx = Vertx.vertx();
-        final VertxSliceServer server = new VertxSliceServer(
-            vertx,
-            new PySlice(new FileStorage(temp)),
-            8080
-        );
-        server.start();
-        Logger.debug(PypiCliITCase.class, "sleping...");
-        Thread.sleep(360_000);
-        server.close();
-        vertx.close();
+    private final class Fake implements Slice {
+
+        /**
+         * Storage.
+         */
+        private final Storage storage;
+
+        /**
+         * Ctor.
+         * @param storage Storage
+         */
+        protected Fake(final Storage storage) {
+            this.storage = storage;
+        }
+
+        @Override
+        public Response response(
+            final String rqline,
+            final Iterable<Map.Entry<String, String>> iterable,
+            final Publisher<ByteBuffer> publisher
+        ) {
+            final Response res;
+            if (rqline.contains(".whl") || rqline.contains(".tar.gz")) {
+                res = new SliceWithHeaders(
+                    new SliceDownload(this.storage),
+                    new Headers.From(new ContentType("application/octet-stream"))
+                ).response(rqline, iterable, publisher);
+            } else {
+                res = new SliceSimple(
+                    new RsWithHeaders(
+                        new RsWithBody(
+                            String.join(
+                                "\n",
+                                "<!DOCTYPE html>",
+                                "<html>",
+                                "  <head>",
+                                "    <title>Test repository</title>",
+                                "  </head>",
+                                "  <body>",
+                                // @checkstyle LineLengthCheck (1 line)
+                                "    <a href=\"/alarmtime/AlarmTime-0.1.5.tar.gz\">AlarmTime-0.1.5.tar.gz</a><br/>",
+                                "    </body>",
+                                "</html>"
+                            ),
+                            StandardCharsets.UTF_8
+                        ),
+                        new Headers.From(new ContentType("text/html"))
+                    )
+                ).response(rqline, iterable, publisher);
+            }
+            return res;
+        }
+
     }
 
 }

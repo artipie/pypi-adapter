@@ -117,6 +117,12 @@ SOFTWARE.
     </dependency>
   </dependencies>
   <build>
+    <testResources>
+      <testResource>
+        <directory>${basedir}/src/test/resources</directory>
+        <filtering>false</filtering>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
