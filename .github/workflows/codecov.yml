@@ -1,5 +1,5 @@
 ---
-name: Reports
+name: Codecov
 "on":
   push:
     branches:
@@ -8,7 +8,7 @@ name: Reports
     branches:
       - master
 jobs:
-  codecov:
+  coverage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -23,7 +23,7 @@ jobs:
           restore-keys: |
             maven-
       - name: Run tests
-        run: mvn -B verify -Pjacoco
+        run: mvn -B verify
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
