@@ -24,7 +24,9 @@
 
 package com.artipie.pypi.http;
 
+import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.SubStorage;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
@@ -35,7 +37,6 @@ import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.KeyFromPath;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
@@ -47,6 +48,7 @@ import org.reactivestreams.Publisher;
  * SliceIndex returned formated html output with index of repository packages.
  *
  * @since 0.2
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class SliceIndex implements Slice {
 
@@ -64,31 +66,39 @@ final class SliceIndex implements Slice {
     }
 
     @Override
-    public Response response(final String line,
-        final Iterable<Map.Entry<String, String>> iterable,
+    public Response response(
+        final String line,
+        final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> publisher
     ) {
-        final URI uri = new RequestLineFrom(line).uri();
+        final Key key = new KeyFromPath(new RequestLineFrom(line).uri().toString());
+        final Storage sub;
+        if (key.string().isEmpty()) {
+            sub = storage;
+        } else {
+            sub = new SubStorage(key, this.storage);
+        }
         return new AsyncResponse(
-            this.storage.list(
-                new KeyFromPath(uri.getPath())
-            ).thenApply(
-                list -> list.stream()
-                    .map(key -> Paths.get(key.string()).subpath(0, 1))
-                    .distinct()
-                    .map(
-                        item -> String.format(
-                            "<a href=\"/%s\">%s</a><br/>", item.toString(), item.getFileName()
-                        )
-                    ).collect(Collectors.joining())
-            ).thenApply(
-                list -> new RsWithBody(
-                    new RsWithHeaders(
-                        new RsWithStatus(RsStatus.OK),
-                        new ContentType("text/html")
-                    ),
-                    String.format("<!DOCTYPE html>\n<html>\n  </body>\n%s\n</body>\n</html>", list),
-                    StandardCharsets.UTF_8
+            sub.list(key)
+                .thenApply(
+                    list -> list.stream()
+                        .map(item -> Paths.get(item.string()).subpath(0, 1))
+                        .distinct()
+                        .map(
+                            item -> String.format(
+                                "<a href=\"/%s\">%s</a><br/>", item.toString(), item.getFileName()
+                            )
+                        ).collect(Collectors.joining())
+                ).thenApply(
+                    list -> new RsWithBody(
+                        new RsWithHeaders(
+                            new RsWithStatus(RsStatus.OK),
+                            new ContentType("text/html")
+                        ),
+                        String.format(
+                            "<!DOCTYPE html>\n<html>\n  </body>\n%s\n</body>\n</html>", list
+                        ),
+                        StandardCharsets.UTF_8
                 )
             )
         );
