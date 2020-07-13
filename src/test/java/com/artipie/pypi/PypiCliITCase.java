@@ -98,7 +98,7 @@ public final class PypiCliITCase {
                             runtime.localAddress(port)
                         )
                     ),
-                    new StringContains(true, "Successfully installed alarmtime-0.1.5")
+                    new StringContains("Successfully installed alarmtime-0.1.5")
                 );
                 runtime.stop();
             }
