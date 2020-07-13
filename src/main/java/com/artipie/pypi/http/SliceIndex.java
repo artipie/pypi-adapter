@@ -24,35 +24,79 @@
 
 package com.artipie.pypi.http;
 
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import com.artipie.asto.SubStorage;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
+import com.artipie.http.headers.ContentType;
+import com.artipie.http.rq.RequestLineFrom;
+import com.artipie.http.rs.RsStatus;
+import com.artipie.http.rs.RsWithBody;
+import com.artipie.http.rs.RsWithHeaders;
+import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.slice.KeyFromPath;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
 
 /**
  * SliceIndex returned formated html output with index of repository packages.
  *
  * @since 0.2
- * @todo #33:90min made implementation of class that provide preformated html with package lists.
- *  {@link SliceIndex#response(String, Iterable, Publisher)}.
- *  At this moment return empty html.
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class SliceIndex implements Slice {
 
+    /**
+     * Artipie artifacts storage.
+     */
+    private final Storage storage;
+
+    /**
+     * Ctor.
+     * @param storage Storage
+     */
+    SliceIndex(final Storage storage) {
+        this.storage = storage;
+    }
+
     @Override
-    public Response response(final String line,
-        final Iterable<Map.Entry<String, String>> iterable,
+    public Response response(
+        final String line,
+        final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> publisher
     ) {
+        final Key key = new KeyFromPath(new RequestLineFrom(line).uri().toString());
+        final Storage sub;
+        if (key.string().isEmpty()) {
+            sub = storage;
+        } else {
+            sub = new SubStorage(key, this.storage);
+        }
         return new AsyncResponse(
-            CompletableFuture.supplyAsync(
-                () -> new HtmlIndexResponse(
-                    " "
+            sub.list(key)
+                .thenApply(
+                    list -> list.stream()
+                        .map(item -> item.parent().map(Key::string).orElse(item.string()))
+                        .distinct()
+                        .map(item -> String.format("<a href=\"/%s\">%s</a><br/>", item, item))
+                        .collect(Collectors.joining())
+                ).thenApply(
+                    list -> new RsWithBody(
+                        new RsWithHeaders(
+                            new RsWithStatus(RsStatus.OK),
+                            new ContentType("text/html")
+                        ),
+                        String.format(
+                            "<!DOCTYPE html>\n<html>\n  </body>\n%s\n</body>\n</html>", list
+                        ),
+                        StandardCharsets.UTF_8
+                    )
                 )
-            )
         );
     }
 }

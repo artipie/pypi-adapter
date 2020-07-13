@@ -123,10 +123,7 @@ public final class PySlice extends Slice.Wrap {
                         new RtRule.ByPath("//")
                     ),
                     new SliceAuth(
-                        new SliceWithHeaders(
-                            new LoggingSlice(new SliceIndex()),
-                            new Headers.From(new ContentType("text/html"))
-                        ),
+                        new LoggingSlice(new SliceIndex(storage)),
                         new Permission.ByName("download", perms),
                         auth
                     )
