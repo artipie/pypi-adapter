@@ -50,7 +50,7 @@ class SliceIndexTest {
         storage.save(new Key.From("abc", "abc-0.1.whl"), new Content.From(new byte[]{})).join();
         MatcherAssert.assertThat(
             new SliceIndex(storage).response(
-                new RequestLine("GET", "/", "HTTP1/1").toString(),
+                new RequestLine("GET", "/").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
             ),

@@ -39,7 +39,6 @@ import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.KeyFromPath;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
@@ -82,13 +81,10 @@ final class SliceIndex implements Slice {
             sub.list(key)
                 .thenApply(
                     list -> list.stream()
-                        .map(item -> Paths.get(item.string()).subpath(0, 1))
+                        .map(item -> item.parent().map(Key::string).orElse(item.string()))
                         .distinct()
-                        .map(
-                            item -> String.format(
-                                "<a href=\"/%s\">%s</a><br/>", item.toString(), item.getFileName()
-                            )
-                        ).collect(Collectors.joining())
+                        .map(item -> String.format("<a href=\"/%s\">%s</a><br/>", item, item))
+                        .collect(Collectors.joining())
                 ).thenApply(
                     list -> new RsWithBody(
                         new RsWithHeaders(
@@ -99,8 +95,8 @@ final class SliceIndex implements Slice {
                             "<!DOCTYPE html>\n<html>\n  </body>\n%s\n</body>\n</html>", list
                         ),
                         StandardCharsets.UTF_8
+                    )
                 )
-            )
         );
     }
 }
