@@ -23,6 +23,7 @@
  */
 package com.artipie.pypi;
 
+import com.artipie.pypi.http.PySliceITCase;
 import com.jcabi.log.Logger;
 import java.io.IOException;
 import org.testcontainers.containers.Container;
@@ -40,7 +41,7 @@ public final class PypiContainer extends GenericContainer<PypiContainer> {
      * Ctor.
      *  Construct container with python runtime and tools.
      */
-    PypiContainer() {
+    public PypiContainer() {
         super("python:3");
         this.setCommand("tail", "-f", "/dev/null");
         this.setWorkingDirectory("/home/");
@@ -73,8 +74,8 @@ public final class PypiContainer extends GenericContainer<PypiContainer> {
             "-c",
             command
         );
-        Logger.info(PypiCliITCase.class, exec.getStdout());
-        Logger.info(PypiCliITCase.class, exec.getStderr());
+        Logger.info(PySliceITCase.class, exec.getStdout());
+        Logger.info(PySliceITCase.class, exec.getStderr());
         return exec.getStdout();
     }
 
@@ -86,5 +87,17 @@ public final class PypiContainer extends GenericContainer<PypiContainer> {
      */
     public String localAddress(final int port) {
         return String.format("http://host.testcontainers.internal:%d/", port);
+    }
+
+    /**
+     * Address to access local port from the docker container.
+     * @param port Port
+     * @param user Username
+     * @param pswd Password
+     * @return Address
+     * @checkstyle NonStaticMethodCheck (10 lines)
+     */
+    public String localAddress(final int port, final String user, final String pswd) {
+        return String.format("http://%s:%s@host.testcontainers.internal:%d/", user, pswd, port);
     }
 }
