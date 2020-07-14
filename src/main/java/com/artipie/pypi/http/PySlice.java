@@ -119,8 +119,7 @@ public final class PySlice extends Slice.Wrap {
                 ),
                 new RtRulePath(
                     new RtRule.All(
-                        new RtRule.ByMethod(RqMethod.GET),
-                        new RtRule.ByPath("//")
+                        new RtRule.ByMethod(RqMethod.GET)
                     ),
                     new SliceAuth(
                         new LoggingSlice(new SliceIndex(storage)),

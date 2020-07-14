@@ -26,7 +26,6 @@ package com.artipie.pypi.http;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.asto.SubStorage;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
@@ -70,20 +69,18 @@ final class SliceIndex implements Slice {
         final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> publisher
     ) {
-        final Key key = new KeyFromPath(new RequestLineFrom(line).uri().toString());
-        final Storage sub;
-        if (key.string().isEmpty()) {
-            sub = storage;
-        } else {
-            sub = new SubStorage(key, this.storage);
-        }
+        final Key rqkey = new KeyFromPath(new RequestLineFrom(line).uri().toString());
         return new AsyncResponse(
-            sub.list(key)
+            this.storage.list(rqkey)
                 .thenApply(
                     list -> list.stream()
-                        .map(item -> item.parent().map(Key::string).orElse(item.string()))
-                        .distinct()
-                        .map(item -> String.format("<a href=\"/%s\">%s</a><br/>", item, item))
+                        .map(
+                            key ->
+                                String.format(
+                                    "<a href=\"/%s\">%s</a><br/>", key.string(),
+                                    SliceIndex.filename(key)
+                                )
+                        )
                         .collect(Collectors.joining())
                 ).thenApply(
                     list -> new RsWithBody(
@@ -98,5 +95,15 @@ final class SliceIndex implements Slice {
                     )
                 )
         );
+    }
+
+    /**
+     * Returns filename, last part of storage key.
+     * @param stkey Storage key
+     * @return Key part
+     */
+    private static String filename(final Key stkey) {
+        final String[] parts = stkey.string().split("/");
+        return parts[parts.length - 1];
     }
 }

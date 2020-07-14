@@ -27,24 +27,12 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
-import com.artipie.http.Headers;
-import com.artipie.http.Response;
-import com.artipie.http.Slice;
-import com.artipie.http.headers.ContentType;
-import com.artipie.http.rs.RsWithBody;
-import com.artipie.http.rs.RsWithHeaders;
-import com.artipie.http.slice.LoggingSlice;
-import com.artipie.http.slice.SliceDownload;
-import com.artipie.http.slice.SliceSimple;
-import com.artipie.http.slice.SliceWithHeaders;
+import com.artipie.pypi.http.PySlice;
 import com.artipie.vertx.VertxSliceServer;
 import io.vertx.reactivex.core.Vertx;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.StringContains;
@@ -53,7 +41,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
-import org.reactivestreams.Publisher;
 import org.testcontainers.Testcontainers;
 
 /**
@@ -84,9 +71,8 @@ public final class PypiCliITCase {
     @Test
     void pypiInstallLatestVersionWorks(@TempDir final Path temp) throws Exception {
         final FileStorage storage = new FileStorage(temp);
-        final Fake slice = new Fake(storage);
         this.putPackages(storage);
-        try (VertxSliceServer server = new VertxSliceServer(this.vertx, new LoggingSlice(slice))) {
+        try (VertxSliceServer server = new VertxSliceServer(this.vertx, new PySlice(storage))) {
             final int port = server.start();
             Testcontainers.exposeHostPorts(port);
             try (PypiContainer runtime = new PypiContainer()) {
@@ -109,7 +95,7 @@ public final class PypiCliITCase {
     void pypiInstallWithVersionWorks(@TempDir final Path temp) throws Exception {
         final FileStorage storage = new FileStorage(temp);
         this.putPackages(storage);
-        try (VertxSliceServer server = new VertxSliceServer(this.vertx, new Fake(storage))) {
+        try (VertxSliceServer server = new VertxSliceServer(this.vertx, new PySlice(storage))) {
             final int port = server.start();
             Testcontainers.exposeHostPorts(port);
             try (PypiContainer runtime = new PypiContainer()) {
@@ -140,65 +126,6 @@ public final class PypiCliITCase {
                 )
             )
         ).join();
-    }
-
-    /**
-     * Fake slice for test.
-     * @since 0.3
-     */
-    private final class Fake implements Slice {
-
-        /**
-         * Storage.
-         */
-        private final Storage storage;
-
-        /**
-         * Ctor.
-         * @param storage Storage
-         */
-        protected Fake(final Storage storage) {
-            this.storage = storage;
-        }
-
-        @Override
-        public Response response(
-            final String rqline,
-            final Iterable<Map.Entry<String, String>> iterable,
-            final Publisher<ByteBuffer> publisher
-        ) {
-            final Response res;
-            if (rqline.contains(".whl") || rqline.contains(".tar.gz")) {
-                res = new SliceWithHeaders(
-                    new SliceDownload(this.storage),
-                    new Headers.From(new ContentType("application/octet-stream"))
-                ).response(rqline, iterable, publisher);
-            } else {
-                res = new SliceSimple(
-                    new RsWithHeaders(
-                        new RsWithBody(
-                            String.join(
-                                "\n",
-                                "<!DOCTYPE html>",
-                                "<html>",
-                                "  <head>",
-                                "    <title>Test repository</title>",
-                                "  </head>",
-                                "  <body>",
-                                // @checkstyle LineLengthCheck (1 line)
-                                "    <a href=\"/alarmtime/AlarmTime-0.1.5.tar.gz\">AlarmTime-0.1.5.tar.gz</a><br/>",
-                                "    </body>",
-                                "</html>"
-                            ),
-                            StandardCharsets.UTF_8
-                        ),
-                        new Headers.From(new ContentType("text/html"))
-                    )
-                ).response(rqline, iterable, publisher);
-            }
-            return res;
-        }
-
     }
 
 }
