@@ -37,8 +37,6 @@ import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -79,12 +77,7 @@ class SliceIndexTest {
                 Collections.emptyList(),
                 Flowable.empty()
             ),
-            new RsHasBody(
-                Matchers.anyOf(
-                    new IsEqual<>(SliceIndexTest.html(gzip, wheel)),
-                    new IsEqual<>(SliceIndexTest.html(wheel, gzip))
-                )
-            )
+            new RsHasBody(SliceIndexTest.html(gzip, wheel))
         );
     }
 
@@ -92,8 +85,8 @@ class SliceIndexTest {
     void returnsIndexListForMixedItems() {
         final Storage storage = new InMemoryStorage();
         final String rqline = "abc";
-        final String one = "abc/folder_one/file.txt";
-        final String two = "abc/file.txt";
+        final String one = "abc/file.txt";
+        final String two = "abc/folder_one/file.txt";
         final String three = "abc/folder_two/abc/file.txt";
         storage.save(new Key.From(two), new Content.From(new byte[]{})).join();
         storage.save(new Key.From(one), new Content.From(new byte[]{})).join();
@@ -107,16 +100,7 @@ class SliceIndexTest {
                 Collections.emptyList(),
                 Flowable.empty()
             ),
-            new RsHasBody(
-                Matchers.anyOf(
-                    new IsEqual<>(SliceIndexTest.html(two, one, three)),
-                    new IsEqual<>(SliceIndexTest.html(two, three, one)),
-                    new IsEqual<>(SliceIndexTest.html(three, one, two)),
-                    new IsEqual<>(SliceIndexTest.html(three, two, one)),
-                    new IsEqual<>(SliceIndexTest.html(one, three, two)),
-                    new IsEqual<>(SliceIndexTest.html(one, two, three))
-                )
-            )
+            new RsHasBody(SliceIndexTest.html(one, two, three))
         );
     }
 
