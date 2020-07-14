@@ -101,13 +101,13 @@ public final class PySliceITCase {
                 ),
                 new StringContainsInOrder(
                     new ListOf<String>(
-                        "Uploading AlarmTime-0.1.5.tar.gz", "100%"
+                        "Uploading alarmtime-0.1.5.tar.gz", "100%"
                     )
                 )
             );
             MatcherAssert.assertThat(
                 "AlarmTime found in storage",
-                storage.exists(new Key.From("AlarmTime/AlarmTime-0.1.5.tar.gz")).join(),
+                storage.exists(new Key.From("alarmtime/alarmtime-0.1.5.tar.gz")).join(),
                 new IsEqual<>(true)
             );
             MatcherAssert.assertThat(
@@ -161,12 +161,12 @@ public final class PySliceITCase {
 
     private void putPackages(final Storage storage) throws Exception {
         storage.save(
-            new Key.From("alarmtime", "AlarmTime-0.1.5.tar.gz"),
+            new Key.From("alarmtime", "alarmtime-0.1.5.tar.gz"),
             new Content.From(
                 Files.readAllBytes(
                     Paths.get(
                         Thread.currentThread().getContextClassLoader()
-                        .getResource("pypi_repo/AlarmTime-0.1.5.tar.gz").toURI()
+                        .getResource("pypi_repo/alarmtime-0.1.5.tar.gz").toURI()
                     )
                 )
             )
