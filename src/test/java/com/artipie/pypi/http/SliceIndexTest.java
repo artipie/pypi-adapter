@@ -52,9 +52,8 @@ class SliceIndexTest {
     @Test
     void returnsIndexListForRoot() {
         final Storage storage = new InMemoryStorage();
-        final String path = "abc";
-        storage.save(new Key.From(path, "abc-0.1.tar.gz"), new Content.From(new byte[]{})).join();
-        storage.save(new Key.From(path, "abc-0.1.whl"), new Content.From(new byte[]{})).join();
+        final String path = "abc/abc-0.1.tar.gz";
+        storage.save(new Key.From(path), new Content.From(new byte[]{})).join();
         MatcherAssert.assertThat(
             new SliceIndex(storage).response(
                 new RequestLine("GET", "/").toString(),
@@ -68,10 +67,10 @@ class SliceIndexTest {
     @Test
     void returnsIndexList() {
         final Storage storage = new InMemoryStorage();
-        final String gzip = "def-0.1.tar.gz";
-        final String wheel = "def-0.2.whl";
-        storage.save(new Key.From("def", gzip), new Content.From(new byte[]{})).join();
-        storage.save(new Key.From("def", wheel), new Content.From(new byte[]{})).join();
+        final String gzip = "def/def-0.1.tar.gz";
+        final String wheel = "def/def-0.2.whl";
+        storage.save(new Key.From(gzip), new Content.From(new byte[]{})).join();
+        storage.save(new Key.From(wheel), new Content.From(new byte[]{})).join();
         storage.save(new Key.From("ghi", "jkl", "hij-0.3.whl"), new Content.From(new byte[]{}))
             .join();
         MatcherAssert.assertThat(
@@ -93,12 +92,12 @@ class SliceIndexTest {
     void returnsIndexListForMixedItems() {
         final Storage storage = new InMemoryStorage();
         final String rqline = "abc";
-        final String file = "file.txt";
-        final String one = "folder_one";
-        final String two = "folder_two";
-        storage.save(new Key.From(rqline, file), new Content.From(new byte[]{})).join();
-        storage.save(new Key.From(rqline, two, file), new Content.From(new byte[]{})).join();
-        storage.save(new Key.From(rqline, one, rqline, file), new Content.From(new byte[]{}))
+        final String one = "abc/folder_one/file.txt";
+        final String two = "abc/file.txt";
+        final String three = "abc/folder_two/abc/file.txt";
+        storage.save(new Key.From(two), new Content.From(new byte[]{})).join();
+        storage.save(new Key.From(one), new Content.From(new byte[]{})).join();
+        storage.save(new Key.From(three), new Content.From(new byte[]{}))
             .join();
         storage.save(new Key.From("def", "ghi", "hij-0.3.whl"), new Content.From(new byte[]{}))
             .join();
@@ -110,12 +109,12 @@ class SliceIndexTest {
             ),
             new RsHasBody(
                 Matchers.anyOf(
-                    new IsEqual<>(SliceIndexTest.html(file, one, two)),
-                    new IsEqual<>(SliceIndexTest.html(file, two, one)),
-                    new IsEqual<>(SliceIndexTest.html(two, one, file)),
-                    new IsEqual<>(SliceIndexTest.html(two, file, one)),
-                    new IsEqual<>(SliceIndexTest.html(one, two, file)),
-                    new IsEqual<>(SliceIndexTest.html(one, file, two))
+                    new IsEqual<>(SliceIndexTest.html(two, one, three)),
+                    new IsEqual<>(SliceIndexTest.html(two, three, one)),
+                    new IsEqual<>(SliceIndexTest.html(three, one, two)),
+                    new IsEqual<>(SliceIndexTest.html(three, two, one)),
+                    new IsEqual<>(SliceIndexTest.html(one, three, two)),
+                    new IsEqual<>(SliceIndexTest.html(one, two, three))
                 )
             )
         );
@@ -148,7 +147,7 @@ class SliceIndexTest {
             new ResponseMatcher(
                 RsStatus.OK,
                 new IsHeader("Content-Type", "text/html"),
-                new IsHeader("Content-Length", "78")
+                new IsHeader("Content-Length", "107")
             )
         );
     }
@@ -159,7 +158,8 @@ class SliceIndexTest {
                 "<!DOCTYPE html>\n<html>\n  </body>\n%s\n</body>\n</html>",
                 Stream.of(items).map(
                     item -> String.format(
-                        "<a href=\"/%s\">%s</a><br/>", item, item
+                        "<a href=\"/%s\">%s</a><br/>", item, Stream.of(item.split("/"))
+                            .reduce((first, second) -> second).orElse("")
                     )
                 ).collect(Collectors.joining())
             ).getBytes();

@@ -38,8 +38,6 @@ import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.KeyFromPath;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
@@ -76,9 +74,13 @@ final class SliceIndex implements Slice {
             this.storage.list(rqkey)
                 .thenApply(
                     list -> list.stream()
-                        .map(key -> SliceIndex.part(rqkey, key))
-                        .distinct()
-                        .map(item -> String.format("<a href=\"/%s\">%s</a><br/>", item, item))
+                        .map(
+                            key ->
+                                String.format(
+                                    "<a href=\"/%s\">%s</a><br/>", key.string(),
+                                    SliceIndex.filename(key)
+                                )
+                        )
                         .collect(Collectors.joining())
                 ).thenApply(
                     list -> new RsWithBody(
@@ -96,22 +98,12 @@ final class SliceIndex implements Slice {
     }
 
     /**
-     * Returns first part of storage key which is not part of the request key: if we
-     * have one/two as a request key and one/two/three/test.txt as a storage key, then 'three' is
-     * the result.
-     * @param rqkey Key from request line
+     * Returns filename, last part of storage key.
      * @param stkey Storage key
      * @return Key part
      */
-    private static String part(final Key rqkey, final Key stkey) {
-        final List<String> rqlist = Arrays.asList(rqkey.string().split("/"));
-        String res = "";
-        for (final String part : stkey.string().split("/")) {
-            if (!rqlist.contains(part)) {
-                res = part;
-                break;
-            }
-        }
-        return res;
+    private static String filename(final Key stkey) {
+        final String[] parts = stkey.string().split("/");
+        return parts[parts.length - 1];
     }
 }
