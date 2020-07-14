@@ -26,7 +26,6 @@ package com.artipie.pypi.http;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.asto.SubStorage;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
@@ -39,6 +38,8 @@ import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.KeyFromPath;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
@@ -70,18 +71,12 @@ final class SliceIndex implements Slice {
         final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> publisher
     ) {
-        final Key key = new KeyFromPath(new RequestLineFrom(line).uri().toString());
-        final Storage sub;
-        if (key.string().isEmpty()) {
-            sub = storage;
-        } else {
-            sub = new SubStorage(key, this.storage);
-        }
+        final Key rqkey = new KeyFromPath(new RequestLineFrom(line).uri().toString());
         return new AsyncResponse(
-            sub.list(key)
+            this.storage.list(rqkey)
                 .thenApply(
                     list -> list.stream()
-                        .map(item -> item.parent().map(Key::string).orElse(item.string()))
+                        .map(key -> SliceIndex.part(rqkey, key))
                         .distinct()
                         .map(item -> String.format("<a href=\"/%s\">%s</a><br/>", item, item))
                         .collect(Collectors.joining())
@@ -98,5 +93,25 @@ final class SliceIndex implements Slice {
                     )
                 )
         );
+    }
+
+    /**
+     * Returns first part of storage key which is not part of the request key: if we
+     * have one/two as a request key and one/two/three/test.txt as a storage key, then 'three' is
+     * the result.
+     * @param rqkey Key from request line
+     * @param stkey Storage key
+     * @return Key part
+     */
+    private static String part(final Key rqkey, final Key stkey) {
+        final List<String> rqlist = Arrays.asList(rqkey.string().split("/"));
+        String res = "";
+        for (final String part : stkey.string().split("/")) {
+            if (!rqlist.contains(part)) {
+                res = part;
+                break;
+            }
+        }
+        return res;
     }
 }
