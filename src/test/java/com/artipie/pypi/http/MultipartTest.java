@@ -50,7 +50,7 @@ class MultipartTest {
                     .content().toCompletableFuture().join()
             ).getCause(),
             new AllOf<>(
-                new ListOf<>(
+                new ListOf<org.hamcrest.Matcher<? super Throwable>>(
                     new MatcherOf<>(ex -> ex instanceof IllegalStateException),
                     new MatcherOf<>(
                         ex -> {
@@ -71,7 +71,7 @@ class MultipartTest {
                 ).content().toCompletableFuture().join()
             ).getCause(),
             new AllOf<>(
-                new ListOf<>(
+                new ListOf<org.hamcrest.Matcher<? super Throwable>>(
                     new MatcherOf<>(ex -> ex instanceof NullPointerException),
                     new MatcherOf<>(
                         ex -> {

@@ -57,7 +57,7 @@ final class Multipart {
     /**
      * Pattern to obtain filename from multipart header.
      */
-    private static final Pattern FILENAME = Pattern.compile(".*filename=\"(.*)\"\\X*");
+    private static final Pattern FILENAME = Pattern.compile(".*filename=\"(.*)\"(.*\\s*)*");
 
     /**
      * Request headers.
