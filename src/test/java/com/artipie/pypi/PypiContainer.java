@@ -23,7 +23,6 @@
  */
 package com.artipie.pypi;
 
-import com.artipie.pypi.http.PySliceITCase;
 import com.jcabi.log.Logger;
 import java.io.IOException;
 import org.testcontainers.containers.Container;
