@@ -78,7 +78,7 @@ public final class PySlice extends Slice.Wrap {
      * @param perms Access permissions.
      * @param auth Concrete identities.
      */
-    private PySlice(final Storage storage, final Permissions perms, final Identities auth) {
+    public PySlice(final Storage storage, final Permissions perms, final Identities auth) {
         super(
             new SliceRoute(
                 new RtRulePath(

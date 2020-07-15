@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
 
 /**
- * SliceIndex returned formated html output with index of repository packages.
+ * SliceIndex returns formatted html output with index of repository packages.
  *
  * @since 0.2
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
