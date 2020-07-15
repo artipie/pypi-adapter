@@ -53,7 +53,7 @@ import org.testcontainers.Testcontainers;
 /**
  * A test which ensures {@code pip} console tool compatibility with the adapter.
  *
- * @since 0.1
+ * @since 0.4
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
@@ -77,8 +77,12 @@ public final class PySliceITCase {
 
     @AfterEach
     void stop() {
-        this.vertx.close();
-        this.server.close();
+        if (this.server != null) {
+            this.server.close();
+        }
+        if (this.vertx != null) {
+            this.vertx.close();
+        }
     }
 
     @Test

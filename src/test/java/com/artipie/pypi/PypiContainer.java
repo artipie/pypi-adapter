@@ -74,8 +74,8 @@ public final class PypiContainer extends GenericContainer<PypiContainer> {
             "-c",
             command
         );
-        Logger.info(PySliceITCase.class, exec.getStdout());
-        Logger.info(PySliceITCase.class, exec.getStderr());
+        Logger.info(this, exec.getStdout());
+        Logger.info(this, exec.getStderr());
         return exec.getStdout();
     }
 
