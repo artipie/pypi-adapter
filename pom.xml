@@ -54,6 +54,10 @@ SOFTWARE.
     <developerConnection>scm:git:ssh://github.com:artipie/pypi-adapter.git</developerConnection>
     <url>https://github.com/artipie/pypi-adapter/tree/master</url>
   </scm>
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>org.jsoup</groupId>
