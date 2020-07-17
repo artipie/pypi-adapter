@@ -54,6 +54,9 @@ SOFTWARE.
     <developerConnection>scm:git:ssh://github.com:artipie/pypi-adapter.git</developerConnection>
     <url>https://github.com/artipie/pypi-adapter/tree/master</url>
   </scm>
+  <properties>
+    <apache.httpcomponents.version>4.5.12</apache.httpcomponents.version>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>org.jsoup</groupId>
@@ -113,6 +116,18 @@ SOFTWARE.
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpmime</artifactId>
+      <version>${apache.httpcomponents.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>${apache.httpcomponents.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
