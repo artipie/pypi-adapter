@@ -30,8 +30,10 @@ import com.artipie.asto.Storage;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
+import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.slice.KeyFromPath;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -74,11 +76,20 @@ final class WheelSlice implements Slice {
         return new AsyncResponse(
             new Multipart(iterable, publisher).content().thenApply(
                 data -> this.storage.save(
-                    WheelSlice.key(data.fileName()),
+                    new Key.From(
+                        new KeyFromPath(new RequestLineFrom(line).uri().toString()),
+                        WheelSlice.key(data.fileName())
+                    ),
                     new Content.From(data.bytes())
                 )
-            ).thenApply(
-                ignored -> new RsWithStatus(RsStatus.CREATED)
+            ).handle(
+                (ignored, throwable) -> {
+                    Response res = new RsWithStatus(RsStatus.CREATED);
+                    if (throwable != null) {
+                        res = new RsWithStatus(RsStatus.BAD_REQUEST);
+                    }
+                    return res;
+                }
             )
         );
     }
