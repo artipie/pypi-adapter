@@ -39,7 +39,6 @@ import com.artipie.http.slice.KeyFromPath;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.reactivestreams.Publisher;
@@ -77,7 +76,7 @@ final class SliceIndex implements Slice {
         final Publisher<ByteBuffer> publisher
     ) {
         final Key rqkey = new KeyFromPath(new RequestLineFrom(line).uri().toString());
-        final Optional<String> full = SliceIndex.full(headers);
+        final String prefix = SliceIndex.prefix(headers, rqkey.string());
         return new AsyncResponse(
             this.storage.list(rqkey)
                 .thenApply(
@@ -85,8 +84,8 @@ final class SliceIndex implements Slice {
                         .map(
                             key ->
                                 String.format(
-                                    "<a href=\"/%s\">%s</a><br/>",
-                                    SliceIndex.merge(full, key.string()),
+                                    "<a href=\"%s\">%s</a><br/>",
+                                    String.format("%s/%s", prefix, key.string()),
                                     SliceIndex.filename(key)
                                 )
                         )
@@ -117,33 +116,28 @@ final class SliceIndex implements Slice {
     }
 
     /**
-     * Obtains full path value.
-     * @param headers Header from request
-     * @return X-FullPath header value
-     */
-    private static Optional<String> full(final Iterable<Map.Entry<String, String>> headers) {
-        return StreamSupport.stream(headers.spliterator(), false)
-            .filter(item -> item.getKey().equals(SliceIndex.HDR_FULL_PATH))
-            .findFirst().map(Map.Entry::getValue);
-    }
-
-    /**
-     * Get correct full path from X-FullPath header value and storage key partial path.
-     * @param full X-FullPath header value if present
-     * @param part Storage key
+     * Get prefix from X-FullPath header value and request path.
+     * @param headers Headers from request
+     * @param path Path from request
      * @return Full path
      */
-    private static String merge(final Optional<String> full, final String part) {
-        return full.map(
-            item -> {
-                String res = item;
-                final String first = part.split("/")[0];
-                if (full.get().indexOf(first) > 0) {
-                    res = full.get().substring(0, full.get().indexOf(first) - 1);
+    private static String prefix(final Iterable<Map.Entry<String, String>> headers,
+        final String path) {
+        return StreamSupport.stream(headers.spliterator(), false)
+            .filter(item -> item.getKey().equals(SliceIndex.HDR_FULL_PATH))
+            .findFirst().map(Map.Entry::getValue)
+            .map(
+                item -> {
+                    final String res;
+                    final String first = path.split("/")[0];
+                    if (item.indexOf(first) > 0) {
+                        res = item.substring(0, item.indexOf(first) - 1);
+                    } else {
+                        res = item;
+                    }
+                    return res;
                 }
-                return String.format("%s/%s", res, part).replaceAll("^/", "");
-            }
-        ).orElse(part);
+            ).orElse("");
     }
 
 }
