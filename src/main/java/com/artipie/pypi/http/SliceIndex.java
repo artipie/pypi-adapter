@@ -39,7 +39,9 @@ import com.artipie.http.slice.KeyFromPath;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.reactivestreams.Publisher;
 
 /**
@@ -49,6 +51,11 @@ import org.reactivestreams.Publisher;
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class SliceIndex implements Slice {
+
+    /**
+     * Full path header name.
+     */
+    private static final String HDR_FULL_PATH = "X-FullPath";
 
     /**
      * Artipie artifacts storage.
@@ -70,6 +77,7 @@ final class SliceIndex implements Slice {
         final Publisher<ByteBuffer> publisher
     ) {
         final Key rqkey = new KeyFromPath(new RequestLineFrom(line).uri().toString());
+        final Optional<String> full = SliceIndex.full(headers);
         return new AsyncResponse(
             this.storage.list(rqkey)
                 .thenApply(
@@ -77,7 +85,8 @@ final class SliceIndex implements Slice {
                         .map(
                             key ->
                                 String.format(
-                                    "<a href=\"/%s\">%s</a><br/>", key.string(),
+                                    "<a href=\"/%s\">%s</a><br/>",
+                                    SliceIndex.merge(full, key.string()),
                                     SliceIndex.filename(key)
                                 )
                         )
@@ -106,4 +115,35 @@ final class SliceIndex implements Slice {
         final String[] parts = stkey.string().split("/");
         return parts[parts.length - 1];
     }
+
+    /**
+     * Obtains full path value.
+     * @param headers Header from request
+     * @return X-FullPath header value
+     */
+    private static Optional<String> full(final Iterable<Map.Entry<String, String>> headers) {
+        return StreamSupport.stream(headers.spliterator(), false)
+            .filter(item -> item.getKey().equals(SliceIndex.HDR_FULL_PATH))
+            .findFirst().map(Map.Entry::getValue);
+    }
+
+    /**
+     * Get correct full path from X-FullPath header value and storage key partial path.
+     * @param full X-FullPath header value if present
+     * @param part Storage key
+     * @return Full path
+     */
+    private static String merge(final Optional<String> full, final String part) {
+        return full.map(
+            item -> {
+                String res = item;
+                final String first = part.split("/")[0];
+                if (full.get().indexOf(first) > 0) {
+                    res = full.get().substring(0, full.get().indexOf(first) - 1);
+                }
+                return String.format("%s/%s", res, part).replaceAll("^/", "");
+            }
+        ).orElse(part);
+    }
+
 }
