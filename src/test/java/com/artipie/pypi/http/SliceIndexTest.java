@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.http.Headers;
 import com.artipie.http.hm.IsHeader;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.hm.RsHasBody;
@@ -47,6 +48,11 @@ import org.junit.jupiter.api.Test;
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class SliceIndexTest {
 
+    /**
+     * Full path header name.
+     */
+    private static final String HDR_FULL_PATH = "X-FullPath";
+
     @Test
     void returnsIndexListForRoot() {
         final Storage storage = new InMemoryStorage();
@@ -59,6 +65,20 @@ class SliceIndexTest {
                 Flowable.empty()
             ),
             new RsHasBody(SliceIndexTest.html(path))
+        );
+    }
+
+    @Test
+    void returnsIndexListForRootWithFullPathHeader() {
+        final Storage storage = new InMemoryStorage();
+        storage.save(new Key.From("abc/abc-0.1.tar.gz"), new Content.From(new byte[]{})).join();
+        MatcherAssert.assertThat(
+            new SliceIndex(storage).response(
+                new RequestLine("GET", "/").toString(),
+                new Headers.From(SliceIndexTest.HDR_FULL_PATH, "/username/pypi"),
+                Flowable.empty()
+            ),
+            new RsHasBody(SliceIndexTest.html("username/pypi/abc/abc-0.1.tar.gz"))
         );
     }
 
@@ -78,6 +98,27 @@ class SliceIndexTest {
                 Flowable.empty()
             ),
             new RsHasBody(SliceIndexTest.html(gzip, wheel))
+        );
+    }
+
+    @Test
+    void returnsIndexListWithFullPathHeader() {
+        final Storage storage = new InMemoryStorage();
+        storage.save(new Key.From("def/def-0.1.tar.gz"), new Content.From(new byte[]{})).join();
+        storage.save(new Key.From("def/def-0.2.whl"), new Content.From(new byte[]{})).join();
+        storage.save(new Key.From("ghi", "jkl", "hij-0.3.whl"), new Content.From(new byte[]{}))
+            .join();
+        MatcherAssert.assertThat(
+            new SliceIndex(storage).response(
+                new RequestLine("GET", "/def").toString(),
+                new Headers.From(SliceIndexTest.HDR_FULL_PATH, "/username/repo/def"),
+                Flowable.empty()
+            ),
+            new RsHasBody(
+                SliceIndexTest.html(
+                    "username/repo/def/def-0.1.tar.gz", "username/repo/def/def-0.2.whl"
+                )
+            )
         );
     }
 
@@ -105,12 +146,50 @@ class SliceIndexTest {
     }
 
     @Test
+    void returnsIndexListForMixedItemsWithFullPath() {
+        final Storage storage = new InMemoryStorage();
+        storage.save(new Key.From("abc/folder_one/file.txt"), new Content.From(new byte[]{}))
+            .join();
+        storage.save(new Key.From("abc/file.txt"), new Content.From(new byte[]{})).join();
+        storage.save(new Key.From("abc/folder_two/abc/file.txt"), new Content.From(new byte[]{}))
+            .join();
+        storage.save(new Key.From("def", "ghi", "hij-0.3.whl"), new Content.From(new byte[]{}))
+            .join();
+        MatcherAssert.assertThat(
+            new SliceIndex(storage).response(
+                new RequestLine("GET", "/abc").toString(),
+                new Headers.From(SliceIndexTest.HDR_FULL_PATH, "/username/pypi/abc"),
+                Flowable.empty()
+            ),
+            new RsHasBody(
+                SliceIndexTest.html(
+                    "username/pypi/abc/file.txt", "username/pypi/abc/folder_one/file.txt",
+                    "username/pypi/abc/folder_two/abc/file.txt"
+                )
+            )
+        );
+    }
+
+    @Test
     void returnsIndexListForEmptyStorage() {
         final Storage storage = new InMemoryStorage();
         MatcherAssert.assertThat(
             new SliceIndex(storage).response(
                 new RequestLine("GET", "/def").toString(),
                 Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasBody("<!DOCTYPE html>\n<html>\n  </body>\n\n</body>\n</html>".getBytes())
+        );
+    }
+
+    @Test
+    void returnsIndexListForEmptyStorageWithFullPath() {
+        final Storage storage = new InMemoryStorage();
+        MatcherAssert.assertThat(
+            new SliceIndex(storage).response(
+                new RequestLine("GET", "/def").toString(),
+                new Headers.From(SliceIndexTest.HDR_FULL_PATH, "/username/pypi/def"),
                 Flowable.empty()
             ),
             new RsHasBody("<!DOCTYPE html>\n<html>\n  </body>\n\n</body>\n</html>".getBytes())
