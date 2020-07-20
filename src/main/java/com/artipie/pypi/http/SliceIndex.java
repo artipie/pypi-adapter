@@ -31,6 +31,7 @@ import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.headers.ContentType;
 import com.artipie.http.rq.RequestLineFrom;
+import com.artipie.http.rq.RqHeaders;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
@@ -40,7 +41,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import org.reactivestreams.Publisher;
 
 /**
@@ -123,9 +123,8 @@ final class SliceIndex implements Slice {
      */
     private static String prefix(final Iterable<Map.Entry<String, String>> headers,
         final String path) {
-        return StreamSupport.stream(headers.spliterator(), false)
-            .filter(item -> item.getKey().equals(SliceIndex.HDR_FULL_PATH))
-            .findFirst().map(Map.Entry::getValue)
+        return new RqHeaders(headers, SliceIndex.HDR_FULL_PATH).stream()
+            .findFirst()
             .map(
                 item -> {
                     final String res;
