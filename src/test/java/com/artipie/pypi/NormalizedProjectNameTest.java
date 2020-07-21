@@ -48,9 +48,10 @@ class NormalizedProjectNameTest {
     @CsvSource({
         "abc-0.1.tar.gz,abc",
         "abc-123-0.2.tar.gz,abc-123",
-        "My_Perfect_Python-1.0.whl,my-perfect-python",
-        "some._-Project-0.0.2.whl,some-project",
-        "0Ther--Pr0ject-0.2.2.whl,0ther-pr0ject"
+        "My_Perfect_Python-1.0.tar.gz,my-perfect-python",
+        "some._-Project-0.0.2.tar.gz,some-project",
+        "0Ther--Pr0ject-0.2.3-py2-none-any.whl.whl,0ther-pr0ject",
+        "simple-0-1-0-py3-cp33m-linux_x86.whl.whl,simple-0"
     })
     void normalisesNames(final String filename, final String normalized) {
         MatcherAssert.assertThat(

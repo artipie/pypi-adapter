@@ -51,11 +51,12 @@ public interface NormalizedProjectName {
     /**
      * Normalized python project name from uploading filename.
      *
-     * Uploaded file name has the following format [project_name]-[version].[extension] where
-     * {@code project_name} and {@code version} are separated by -, extension can be either tar.gz
-     * or whl. {@code project_name} can contain ASCII alphabet, ASCII numbers, ., -, and _. This
-     * class extracts {@code project_name} and normalise it by replacing ., -, or _ with a single -
-     * and making all characters lowecase.
+     * Uploaded file name has the following format:
+     * [project_name]-[version][other_info].[extension],
+     * where {@code project_name} and {@code version} are separated by -, extension can be either
+     * tar.gz or whl, {@code other_info} is specified for whl packages. {@code project_name} can
+     * contain ASCII alphabet, ASCII numbers, ., -, and _. This class extracts {@code project_name}
+     * and normalise it by replacing ., -, or _ with a single - and making all characters lowecase.
      *
      * @since 0.6
      */
@@ -65,7 +66,14 @@ public interface NormalizedProjectName {
          * Pattern to obtain package name from uploaded file name: for file name
          * 'Artipie-Testpkg-0.0.3.tar.gz', then package name is 'Artipie-Testpkg'.
          */
-        private static final Pattern PKG_NAME = Pattern.compile("(.*)-.*");
+        private static final Pattern ARCHIVE_PTRN = Pattern.compile("(.*)-.*");
+
+        /**
+         * Python wheel package name pattern, for more details see
+         * <a href="https://www.python.org/dev/peps/pep-0427/#file-name-convention">docs</a>.
+         */
+        private static final Pattern WHEEL_PTRN =
+            Pattern.compile("(.*?)-([0-9.]+)(-\\d+)?-(py\\d)-(.*)-(.*).whl");
 
         /**
          * File name.
@@ -82,7 +90,12 @@ public interface NormalizedProjectName {
 
         @Override
         public String value() {
-            final Matcher matcher = FromFilename.PKG_NAME.matcher(this.filename);
+            final Matcher matcher;
+            if (this.filename.endsWith("whl")) {
+                matcher = FromFilename.WHEEL_PTRN.matcher(this.filename);
+            } else {
+                matcher = FromFilename.ARCHIVE_PTRN.matcher(this.filename);
+            }
             if (matcher.matches()) {
                 return matcher.group(1).replaceAll("[-_.]+", "-").toLowerCase(Locale.US);
             }
