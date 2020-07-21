@@ -34,24 +34,18 @@ import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.KeyFromPath;
+import com.artipie.pypi.NormalizedProjectName;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
 /**
  * WheelSlice save and manage whl and tgz entries.
  *
  * @since 0.2
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class WheelSlice implements Slice {
-
-    /**
-     * Pattern to obtain package name from uploaded file name: for file name
-     * 'artipietestpkg-0.0.3.tar.gz', then package name is 'artipietestpkg'.
-     */
-    private static final Pattern PKG_NAME = Pattern.compile("(.*?)-.*");
 
     /**
      * The Storage.
@@ -78,7 +72,8 @@ final class WheelSlice implements Slice {
                 data -> this.storage.save(
                     new Key.From(
                         new KeyFromPath(new RequestLineFrom(line).uri().toString()),
-                        WheelSlice.key(data.fileName())
+                        new NormalizedProjectName.FromFilename(data.fileName()).value(),
+                        data.fileName()
                     ),
                     new Content.From(data.bytes())
                 )
@@ -92,18 +87,5 @@ final class WheelSlice implements Slice {
                 }
             )
         );
-    }
-
-    /**
-     * Key from filename.
-     * @param filename Filename
-     * @return Storage key
-     */
-    private static Key key(final String filename) {
-        final Matcher matcher = PKG_NAME.matcher(filename);
-        if (matcher.matches()) {
-            return new Key.From(matcher.group(1), filename);
-        }
-        throw new IllegalArgumentException("Invalid file");
     }
 }

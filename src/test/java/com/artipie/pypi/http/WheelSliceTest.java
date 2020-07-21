@@ -56,7 +56,7 @@ class WheelSliceTest {
     void savesContentAndReturnsOk() throws IOException {
         final Storage storage = new InMemoryStorage();
         final String boundary = "123";
-        final String filename = "part-0.1.whl";
+        final String filename = "part-0.1.tar.gz";
         final byte[] body = "some".getBytes();
         MatcherAssert.assertThat(
             "Returns CREATED status",
@@ -78,7 +78,7 @@ class WheelSliceTest {
     void savesContentByPathAndReturnsOk() throws IOException {
         final Storage storage = new InMemoryStorage();
         final String boundary = "098";
-        final String filename = "myproject-0.1.whl";
+        final String filename = "myproject-0.1-py3-any-none.whl";
         final String path = "sample";
         final byte[] body = "python code".getBytes();
         MatcherAssert.assertThat(
@@ -93,6 +93,29 @@ class WheelSliceTest {
         MatcherAssert.assertThat(
             "Saves content to storage",
             this.bytes(storage.value(new Key.From(path, "myproject", filename)).join()),
+            new IsEqual<>(body)
+        );
+    }
+
+    @Test
+    void savesContentByNormalizedNameAndReturnsOk() throws IOException {
+        final Storage storage = new InMemoryStorage();
+        final String boundary = "876";
+        final String filename = "My_Super.Project-0.3-py2-any-linux_x86.whl";
+        final String path = "super";
+        final byte[] body = "python code".getBytes();
+        MatcherAssert.assertThat(
+            "Returns CREATED status",
+            new WheelSlice(storage).response(
+                new RequestLine("GET", String.format("/%s", path)).toString(),
+                new Headers.From(new ContentType(String.format("Multipart;boundary=%s", boundary))),
+                Flowable.fromArray(ByteBuffer.wrap(this.multipartBody(body, boundary, filename)))
+            ),
+            new RsHasStatus(RsStatus.CREATED)
+        );
+        MatcherAssert.assertThat(
+            "Saves content to storage",
+            this.bytes(storage.value(new Key.From(path, "my-super-project", filename)).join()),
             new IsEqual<>(body)
         );
     }
