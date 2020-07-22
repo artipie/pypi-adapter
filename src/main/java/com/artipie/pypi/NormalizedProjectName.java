@@ -97,11 +97,48 @@ public interface NormalizedProjectName {
                 matcher = FromFilename.ARCHIVE_PTRN.matcher(this.filename);
             }
             if (matcher.matches()) {
-                return matcher.group(1).replaceAll("[-_.]+", "-").toLowerCase(Locale.US);
+                return new Simple(matcher.group(1)).value();
             }
             throw new IllegalArgumentException(
                 // @checkstyle LineLengthCheck (1 line)
                 "Python project filename must have format <project_name>-<version>.whl or <project_name>-<version>.tar.gz"
+            );
+        }
+    }
+
+    /**
+     * Simple {@link NormalizedProjectName} implementation: normalise given name
+     * by replacing ., -, or _ with a single - and making all characters lowecase. Name can contain
+     * ASCII alphabet, ASCII numbers, ., -, and _.
+     * @since 0.6
+     */
+    final class Simple implements NormalizedProjectName {
+
+        /**
+         * Pattern to verify the name.
+         */
+        private static final Pattern VERIFY = Pattern.compile("[A-Za-z0-9.\\-_]+");
+
+        /**
+         * Name to normalize.
+         */
+        private final String name;
+
+        /**
+         * Ctor.
+         * @param name Name to normalize
+         */
+        public Simple(final String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String value() {
+            if (Simple.VERIFY.matcher(this.name).matches()) {
+                return this.name.replaceAll("[-_.]+", "-").toLowerCase(Locale.US);
+            }
+            throw new IllegalArgumentException(
+                "Invalid name: python project should match [A-Za-z0-9.-_]+"
             );
         }
     }

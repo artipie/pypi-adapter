@@ -31,32 +31,31 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 /**
- * Test for {@link NormalizedProjectName.FromFilename}.
+ * Test for {@link NormalizedProjectName.Simple}.
  * @since 0.6
  */
-class NormalizedProjectNameTest {
+class NormalizedProjectNameSimpleTest {
 
     @Test
     void throwsExceptionOnInvalidName() {
         Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> new NormalizedProjectName.FromFilename("abc.txt").value()
+            () -> new NormalizedProjectName.Simple("one/two/three").value()
         );
     }
 
     @ParameterizedTest
     @CsvSource({
-        "abc-0.1.tar.gz,abc",
-        "abc-123-0.2.tar.gz,abc-123",
-        "My_Perfect_Python-1.0.tar.gz,my-perfect-python",
-        "some._-Project-0.0.2.tar.gz,some-project",
-        "0Ther--Pr0ject-0.2.3-py2-none-any.whl.whl,0ther-pr0ject",
-        "simple-0-1-0-py3-cp33m-linux_x86.whl.whl,simple-0"
+        "superProject,superproject",
+        "my-super-project,my-super-project",
+        "One._Two._Three,one-two-three",
+        "agent--007,agent-007"
     })
-    void normalisesNames(final String filename, final String normalized) {
+    void normalisesNames(final String name, final String normalized) {
         MatcherAssert.assertThat(
-            new NormalizedProjectName.FromFilename(filename).value(),
+            new NormalizedProjectName.Simple(name).value(),
             new IsEqual<>(normalized)
         );
     }
+
 }
