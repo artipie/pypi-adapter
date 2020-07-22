@@ -51,7 +51,9 @@ class NormalizedProjectNameTest {
         "My_Perfect_Python-1.0.tar.gz,my-perfect-python",
         "some._-Project-0.0.2.tar.gz,some-project",
         "0Ther--Pr0ject-0.2.3-py2-none-any.whl.whl,0ther-pr0ject",
-        "simple-0-1-0-py3-cp33m-linux_x86.whl.whl,simple-0"
+        "simple-0-1-0-py3-cp33m-linux_x86.whl.whl,simple-0",
+        "ABtests-0.0.2.1-py2.py3-none-any.whl,abtests",
+        "CDtests-0.0.2.1-9-py2.py3-none-any.whl,cdtests"
     })
     void normalisesNames(final String filename, final String normalized) {
         MatcherAssert.assertThat(

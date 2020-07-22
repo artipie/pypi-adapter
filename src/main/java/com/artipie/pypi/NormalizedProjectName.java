@@ -73,7 +73,7 @@ public interface NormalizedProjectName {
          * <a href="https://www.python.org/dev/peps/pep-0427/#file-name-convention">docs</a>.
          */
         private static final Pattern WHEEL_PTRN =
-            Pattern.compile("(.*?)-([0-9.]+)(-\\d+)?-(py\\d)-(.*)-(.*).whl");
+            Pattern.compile("(.*?)-([0-9.]+)(-\\d+)?-((py\\d.?)+)-(.*)-(.*).whl");
 
         /**
          * File name.
