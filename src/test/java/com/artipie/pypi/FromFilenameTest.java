@@ -34,7 +34,7 @@ import org.junit.jupiter.params.provider.CsvSource;
  * Test for {@link NormalizedProjectName.FromFilename}.
  * @since 0.6
  */
-class NormalizedProjectNameTest {
+class FromFilenameTest {
 
     @Test
     void throwsExceptionOnInvalidName() {
