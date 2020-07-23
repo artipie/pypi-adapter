@@ -51,7 +51,7 @@ class NormalizedProjectNameSimpleTest {
         "One._Two._Three,one-two-three",
         "agent--007,agent-007"
     })
-    void normalisesNames(final String name, final String normalized) {
+    void normalizesNames(final String name, final String normalized) {
         MatcherAssert.assertThat(
             new NormalizedProjectName.Simple(name).value(),
             new IsEqual<>(normalized)
