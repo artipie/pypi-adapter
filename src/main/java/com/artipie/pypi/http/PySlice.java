@@ -119,10 +119,21 @@ public final class PySlice extends Slice.Wrap {
                 ),
                 new RtRulePath(
                     new RtRule.All(
-                        new RtRule.ByMethod(RqMethod.GET)
+                        new RtRule.ByMethod(RqMethod.GET),
+                        new RtRule.ByPath(".*(\\/[a-z0-9\\-]+?\\/?$)")
                     ),
                     new SliceAuth(
                         new LoggingSlice(new SliceIndex(storage)),
+                        new Permission.ByName("download", perms),
+                        auth
+                    )
+                ),
+                new RtRulePath(
+                    new RtRule.All(
+                        new RtRule.ByMethod(RqMethod.GET)
+                    ),
+                    new SliceAuth(
+                        new LoggingSlice(new RedirectSlice()),
                         new Permission.ByName("download", perms),
                         auth
                     )
