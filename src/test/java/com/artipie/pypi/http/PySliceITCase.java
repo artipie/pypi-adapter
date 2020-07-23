@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
+import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.http.auth.BasicIdentities;
 import com.artipie.http.auth.Identities;
 import com.artipie.http.auth.Permissions;
@@ -101,7 +102,7 @@ public final class PySliceITCase {
                 "AlarmTime successfully uploaded",
                 runtime.bash(
                     // @checkstyle LineLengthCheck (1 line)
-                    String.format("python3 -m twine upload --repository-url %s -u %s -p %s --verbose pypi_repo/*", runtime.localAddress(port), user, pswd)
+                    String.format("python3 -m twine upload --repository-url %s -u %s -p %s --verbose pypi_repo/alarmtime-0.1.5.tar.gz", runtime.localAddress(port), user, pswd)
                 ),
                 new StringContainsInOrder(
                     new ListOf<String>(
@@ -124,6 +125,44 @@ public final class PySliceITCase {
                     )
                 ),
                 new StringContains("Successfully installed alarmtime-0.1.5")
+            );
+            runtime.stop();
+        }
+    }
+
+    @Test
+    void canPublishAndInstallIfNameIsNotNormalized() throws Exception {
+        final Storage storage = new InMemoryStorage();
+        final int port = this.startServer(storage, Permissions.FREE, Identities.ANONYMOUS);
+        try (PypiContainer runtime = new PypiContainer()) {
+            runtime.installTooling();
+            MatcherAssert.assertThat(
+                "ABtests successfully uploaded",
+                runtime.bash(
+                    // @checkstyle LineLengthCheck (1 line)
+                    String.format("python3 -m twine upload --repository-url %s -u any -p any --verbose pypi_repo/ABtests-0.0.2.1-py2.py3-none-any.whl", runtime.localAddress(port))
+                ),
+                new StringContainsInOrder(
+                    new ListOf<String>(
+                        "Uploading ABtests-0.0.2.1-py2.py3-none-any.whl", "100%"
+                    )
+                )
+            );
+            MatcherAssert.assertThat(
+                "ABtests found in storage",
+                storage.exists(new Key.From("abtests/ABtests-0.0.2.1-py2.py3-none-any.whl")).join(),
+                new IsEqual<>(true)
+            );
+            MatcherAssert.assertThat(
+                "ABtests successfully installed",
+                runtime.bash(
+                    String.format(
+                        // @checkstyle LineLengthCheck (1 line)
+                        "pip install --index-url %s --no-deps --trusted-host host.testcontainers.internal ABtests",
+                        runtime.localAddress(port)
+                    )
+                ),
+                new StringContains("Successfully installed ABtests-0.0.2.1")
             );
             runtime.stop();
         }
