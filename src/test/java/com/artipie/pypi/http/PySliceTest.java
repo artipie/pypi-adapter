@@ -77,6 +77,31 @@ class PySliceTest {
     }
 
     @Test
+    void returnsIndexPageByRootRequest() {
+        final Storage storage = new InMemoryStorage();
+        final byte[] content = "python package".getBytes();
+        final String key = "simple/alarmtime-0.1.5.tar.gz";
+        storage.save(new Key.From(key), new Content.From(content)).join();
+        MatcherAssert.assertThat(
+            new PySlice(storage).response(
+                new RequestLine("GET", "/").toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            Matchers.allOf(
+                new RsHasBody(
+                    new IsString(new StringContains("alarmtime-0.1.5.tar.gz"))
+                ),
+                new RsHasStatus(RsStatus.OK),
+                new RsHasHeaders(
+                    new Header("Content-type", "text/html"),
+                    new Header("Content-Length", "121")
+                )
+            )
+        );
+    }
+
+    @Test
     void redirectsToNormalizedPath() {
         MatcherAssert.assertThat(
             new PySlice(new InMemoryStorage()).response(

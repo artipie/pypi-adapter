@@ -120,7 +120,7 @@ public final class PySlice extends Slice.Wrap {
                 new RtRulePath(
                     new RtRule.All(
                         new RtRule.ByMethod(RqMethod.GET),
-                        new RtRule.ByPath(".*(\\/[a-z0-9\\-]+?\\/?$)")
+                        new RtRule.ByPath("(^\\/)|(.*(\\/[a-z0-9\\-]+?\\/?$))")
                     ),
                     new SliceAuth(
                         new LoggingSlice(new SliceIndex(storage)),
