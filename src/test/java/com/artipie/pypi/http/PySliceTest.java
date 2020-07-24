@@ -41,6 +41,7 @@ import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.StringContains;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -51,14 +52,29 @@ import org.junit.jupiter.api.Test;
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class PySliceTest {
 
+    /**
+     * Test slice.
+     */
+    private PySlice slice;
+
+    /**
+     * Test storage.
+     */
+    private Storage storage;
+
+    @BeforeEach
+    void init() {
+        this.storage = new InMemoryStorage();
+        this.slice = new PySlice(this.storage);
+    }
+
     @Test
     void returnsIndexPage() {
-        final Storage storage = new InMemoryStorage();
         final byte[] content = "python package".getBytes();
         final String key = "simple/simple-0.1-py3-cp33m-linux_x86.whl";
-        storage.save(new Key.From(key), new Content.From(content)).join();
+        this.storage.save(new Key.From(key), new Content.From(content)).join();
         MatcherAssert.assertThat(
-            new PySlice(storage).response(
+            this.slice.response(
                 new RequestLine("GET", "/simple").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
@@ -78,12 +94,11 @@ class PySliceTest {
 
     @Test
     void returnsIndexPageByRootRequest() {
-        final Storage storage = new InMemoryStorage();
         final byte[] content = "python package".getBytes();
         final String key = "simple/alarmtime-0.1.5.tar.gz";
-        storage.save(new Key.From(key), new Content.From(content)).join();
+        this.storage.save(new Key.From(key), new Content.From(content)).join();
         MatcherAssert.assertThat(
-            new PySlice(storage).response(
+            this.slice.response(
                 new RequestLine("GET", "/").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
@@ -104,7 +119,7 @@ class PySliceTest {
     @Test
     void redirectsToNormalizedPath() {
         MatcherAssert.assertThat(
-            new PySlice(new InMemoryStorage()).response(
+            this.slice.response(
                 new RequestLine("GET", "/one/Two_three").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
@@ -119,7 +134,7 @@ class PySliceTest {
     @Test
     void returnsBadRequestOnEmptyPost() {
         MatcherAssert.assertThat(
-            new PySlice(new InMemoryStorage()).response(
+            this.slice.response(
                 new RequestLine("POST", "/sample").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
@@ -130,12 +145,11 @@ class PySliceTest {
 
     @Test
     void downloadsTarGz() {
-        final Storage storage = new InMemoryStorage();
         final byte[] content = "python package".getBytes();
         final String key = "my/my-project.tar.gz";
-        storage.save(new Key.From(key), new Content.From(content)).join();
+        this.storage.save(new Key.From(key), new Content.From(content)).join();
         MatcherAssert.assertThat(
-            new PySlice(storage).response(
+            this.slice.response(
                 new RequestLine("GET", key).toString(),
                 Collections.emptyList(),
                 Flowable.empty()
@@ -149,12 +163,11 @@ class PySliceTest {
 
     @Test
     void downloadsWheel() {
-        final Storage storage = new InMemoryStorage();
         final byte[] content = "python wheel".getBytes();
         final String key = "my/my-project.whl";
-        storage.save(new Key.From(key), new Content.From(content)).join();
+        this.storage.save(new Key.From(key), new Content.From(content)).join();
         MatcherAssert.assertThat(
-            new PySlice(storage).response(
+            this.slice.response(
                 new RequestLine("GET", key).toString(),
                 Collections.emptyList(),
                 Flowable.empty()
