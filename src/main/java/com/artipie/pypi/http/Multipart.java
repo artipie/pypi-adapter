@@ -23,10 +23,8 @@
  */
 package com.artipie.pypi.http;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
-import com.artipie.asto.Remaining;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
+import com.artipie.asto.ext.PublisherAs;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -89,14 +87,10 @@ final class Multipart {
      * @return Data.
      */
     public CompletionStage<Data> content() {
-        return new Concatenation(this.body)
-            .single()
-            .map(Remaining::new)
-            .map(Remaining::bytes)
-            .map(ByteArrayInputStream::new)
-            .map(input -> new MultipartStream(input, this.boundary(), Multipart.BUFFER, null))
-            .map(Multipart::content)
-            .to(SingleInterop.get());
+        return new PublisherAs(this.body).bytes()
+            .thenApply(ByteArrayInputStream::new)
+            .thenApply(input -> new MultipartStream(input, this.boundary(), Multipart.BUFFER, null))
+            .thenApply(Multipart::content);
     }
 
     /**

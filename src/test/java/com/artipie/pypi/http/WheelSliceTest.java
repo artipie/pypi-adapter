@@ -23,18 +23,15 @@
  */
 package com.artipie.pypi.http;
 
-import com.artipie.asto.Concatenation;
-import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.http.Headers;
 import com.artipie.http.headers.ContentType;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -69,7 +66,9 @@ class WheelSliceTest {
         );
         MatcherAssert.assertThat(
             "Saves content to storage",
-            this.bytes(storage.value(new Key.From("part", filename)).join()),
+            new PublisherAs(
+                storage.value(new Key.From("part", filename)).join()
+            ).bytes().toCompletableFuture().join(),
             new IsEqual<>(body)
         );
     }
@@ -92,7 +91,9 @@ class WheelSliceTest {
         );
         MatcherAssert.assertThat(
             "Saves content to storage",
-            this.bytes(storage.value(new Key.From(path, "myproject", filename)).join()),
+            new PublisherAs(
+                storage.value(new Key.From(path, "myproject", filename)).join()
+            ).bytes().toCompletableFuture().join(),
             new IsEqual<>(body)
         );
     }
@@ -115,7 +116,9 @@ class WheelSliceTest {
         );
         MatcherAssert.assertThat(
             "Saves content to storage",
-            this.bytes(storage.value(new Key.From(path, "my-super-project", filename)).join()),
+            new PublisherAs(
+                storage.value(new Key.From(path, "my-super-project", filename)).join()
+            ).bytes().toCompletableFuture().join(),
             new IsEqual<>(body)
         );
     }
@@ -148,16 +151,6 @@ class WheelSliceTest {
                 .writeTo(res);
             return res.toByteArray();
         }
-    }
-
-    private byte[] bytes(final Content content) {
-        return new Concatenation(content)
-            .single()
-            .map(buf -> new Remaining(buf, true))
-            .map(Remaining::bytes)
-            .to(SingleInterop.get())
-            .toCompletableFuture()
-            .join();
     }
 
 }

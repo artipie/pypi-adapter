@@ -26,6 +26,7 @@ package com.artipie.pypi.http;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ext.KeyLastPart;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
@@ -86,7 +87,7 @@ final class SliceIndex implements Slice {
                                 String.format(
                                     "<a href=\"%s\">%s</a><br/>",
                                     String.format("%s/%s", prefix, key.string()),
-                                    SliceIndex.filename(key)
+                                    new KeyLastPart(key).get()
                                 )
                         )
                         .collect(Collectors.joining())
@@ -103,16 +104,6 @@ final class SliceIndex implements Slice {
                     )
                 )
         );
-    }
-
-    /**
-     * Returns filename, last part of storage key.
-     * @param stkey Storage key
-     * @return Key part
-     */
-    private static String filename(final Key stkey) {
-        final String[] parts = stkey.string().split("/");
-        return parts[parts.length - 1];
     }
 
     /**
