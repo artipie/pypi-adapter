@@ -26,6 +26,7 @@ package com.artipie.pypi.http;
 
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ext.ContentDigest;
 import com.artipie.asto.ext.KeyLastPart;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -38,10 +39,12 @@ import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.KeyFromPath;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
 
 /**
@@ -79,26 +82,32 @@ final class SliceIndex implements Slice {
         final Key rqkey = new KeyFromPath(new RequestLineFrom(line).uri().toString());
         final String prefix = SliceIndex.prefix(headers, rqkey.string());
         return new AsyncResponse(
-            this.storage.list(rqkey)
-                .thenApply(
-                    list -> list.stream()
-                        .map(
-                            key ->
-                                String.format(
-                                    "<a href=\"%s\">%s</a><br/>",
-                                    String.format("%s/%s", prefix, key.string()),
-                                    new KeyLastPart(key).get()
-                                )
+            SingleInterop.fromFuture(this.storage.list(rqkey))
+                .flatMapPublisher(Flowable::fromIterable)
+                .flatMapSingle(
+                    key -> Single.fromFuture(
+                        this.storage.value(key).thenCompose(
+                            value -> new ContentDigest(value, ContentDigest.Digests.SHA256).hex()
+                        ).thenApply(
+                            hex -> String.format(
+                                "<a href=\"%s#sha256=%s\">%s</a><br/>",
+                                String.format("%s/%s", prefix, key.string()),
+                                hex,
+                                new KeyLastPart(key).get()
+                            )
                         )
-                        .collect(Collectors.joining())
-                ).thenApply(
-                    list -> new RsWithBody(
+                    )
+                )
+                .collect(StringBuilder::new, StringBuilder::append)
+                .<Response>map(
+                    resp -> new RsWithBody(
                         new RsWithHeaders(
                             new RsWithStatus(RsStatus.OK),
                             new ContentType("text/html")
                         ),
                         String.format(
-                            "<!DOCTYPE html>\n<html>\n  </body>\n%s\n</body>\n</html>", list
+                            "<!DOCTYPE html>\n<html>\n  </body>\n%s\n</body>\n</html>",
+                            resp.toString()
                         ),
                         StandardCharsets.UTF_8
                     )
