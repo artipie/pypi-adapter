@@ -49,7 +49,7 @@ import org.junit.jupiter.api.Test;
  * @since 0.6
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.TooManyMethods"})
 class PySliceTest {
 
     /**
@@ -144,9 +144,81 @@ class PySliceTest {
     }
 
     @Test
+    void downloadsZip() {
+        final byte[] content = "python zip package".getBytes();
+        final String key = "my/zip/my-project.zip";
+        this.storage.save(new Key.From(key), new Content.From(content)).join();
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine("GET", key).toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new ResponseMatcher(
+                RsStatus.OK,
+                content
+            )
+        );
+    }
+
+    @Test
+    void downloadsTar() {
+        final byte[] content = "python tar package".getBytes();
+        final String key = "my-tar/my-project.tar";
+        this.storage.save(new Key.From(key), new Content.From(content)).join();
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine("GET", key).toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new ResponseMatcher(
+                RsStatus.OK,
+                content
+            )
+        );
+    }
+
+    @Test
     void downloadsTarGz() {
         final byte[] content = "python package".getBytes();
         final String key = "my/my-project.tar.gz";
+        this.storage.save(new Key.From(key), new Content.From(content)).join();
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine("GET", key).toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new ResponseMatcher(
+                RsStatus.OK,
+                content
+            )
+        );
+    }
+
+    @Test
+    void downloadsTarZ() {
+        final byte[] content = "python tar z package".getBytes();
+        final String key = "my/my-project-z.tar.Z";
+        this.storage.save(new Key.From(key), new Content.From(content)).join();
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine("GET", key).toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new ResponseMatcher(
+                RsStatus.OK,
+                content
+            )
+        );
+    }
+
+    @Test
+    void downloadsTarBz() {
+        final byte[] content = "python tar bz2 package".getBytes();
+        final String key = "new/my/my-project.tar.bz2";
         this.storage.save(new Key.From(key), new Content.From(content)).join();
         MatcherAssert.assertThat(
             this.slice.response(
