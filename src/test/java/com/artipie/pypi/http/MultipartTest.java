@@ -74,7 +74,7 @@ class MultipartTest {
             Assertions.assertThrows(
                 CompletionException.class,
                 () -> new Multipart(
-                    new Headers.From(new ContentType("098")), Flowable.empty()
+                    new Headers.From(new ContentType("123")), Flowable.empty()
                 ).content().toCompletableFuture().join()
             ).getCause(),
             new AllOf<>(
@@ -93,7 +93,7 @@ class MultipartTest {
     void parsesMultipart() throws IOException {
         final byte[] bytes = "python content".getBytes();
         final String filename = "my_package-0.1.tar.gz";
-        final String boundary = "123";
+        final String boundary = "098";
         final Multipart.Data res = new Multipart(
             new Headers.From(new ContentType(String.format("Multipart;boundary=%s", boundary))),
             Flowable.fromArray(ByteBuffer.wrap(this.multipartBody(bytes, filename, boundary)))
