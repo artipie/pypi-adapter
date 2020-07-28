@@ -35,9 +35,13 @@ import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Collections;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.cactoos.map.MapEntry;
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -45,7 +49,7 @@ import org.junit.jupiter.api.Test;
  * @since 0.4
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.TooManyMethods", "unchecked"})
 class SliceIndexTest {
 
     /**
@@ -53,70 +57,91 @@ class SliceIndexTest {
      */
     private static final String HDR_FULL_PATH = "X-FullPath";
 
+    /**
+     * Test storage.
+     */
+    private Storage storage;
+
+    @BeforeEach
+    void init() {
+        this.storage = new InMemoryStorage();
+    }
+
     @Test
     void returnsIndexListForRoot() {
-        final Storage storage = new InMemoryStorage();
         final String path = "abc/abc-0.1.tar.gz";
-        storage.save(new Key.From(path), new Content.From(new byte[]{})).join();
+        final byte[] bytes = "abc".getBytes();
+        this.storage.save(new Key.From(path), new Content.From(bytes)).join();
         MatcherAssert.assertThat(
-            new SliceIndex(storage).response(
+            new SliceIndex(this.storage).response(
                 new RequestLine("GET", "/").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
             ),
-            new RsHasBody(SliceIndexTest.html(path))
+            new RsHasBody(SliceIndexTest.html(new MapEntry<>(path, bytes)))
         );
     }
 
     @Test
     void returnsIndexListForRootWithFullPathHeader() {
-        final Storage storage = new InMemoryStorage();
-        storage.save(new Key.From("abc/abc-0.1.tar.gz"), new Content.From(new byte[]{})).join();
+        final byte[] bytes = "qwerty".getBytes();
+        this.storage.save(new Key.From("abc/abc-0.1.tar.gz"), new Content.From(bytes))
+            .join();
         MatcherAssert.assertThat(
-            new SliceIndex(storage).response(
+            new SliceIndex(this.storage).response(
                 new RequestLine("GET", "/").toString(),
                 new Headers.From(SliceIndexTest.HDR_FULL_PATH, "/username/pypi"),
                 Flowable.empty()
             ),
-            new RsHasBody(SliceIndexTest.html("username/pypi/abc/abc-0.1.tar.gz"))
+            new RsHasBody(
+                SliceIndexTest.html(new MapEntry<>("username/pypi/abc/abc-0.1.tar.gz", bytes))
+            )
         );
     }
 
     @Test
     void returnsIndexList() {
-        final Storage storage = new InMemoryStorage();
         final String gzip = "def/def-0.1.tar.gz";
         final String wheel = "def/def-0.2.whl";
-        storage.save(new Key.From(gzip), new Content.From(new byte[]{})).join();
-        storage.save(new Key.From(wheel), new Content.From(new byte[]{})).join();
-        storage.save(new Key.From("ghi", "jkl", "hij-0.3.whl"), new Content.From(new byte[]{}))
-            .join();
+        this.storage.save(new Key.From(gzip), new Content.From(gzip.getBytes())).join();
+        this.storage.save(new Key.From(wheel), new Content.From(wheel.getBytes())).join();
+        this.storage.save(
+            new Key.From("ghi", "jkl", "hij-0.3.whl"), new Content.From("000".getBytes())
+        ).join();
         MatcherAssert.assertThat(
-            new SliceIndex(storage).response(
+            new SliceIndex(this.storage).response(
                 new RequestLine("GET", "/def").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
             ),
-            new RsHasBody(SliceIndexTest.html(gzip, wheel))
+            new RsHasBody(
+                SliceIndexTest.html(
+                    new MapEntry<>(gzip, gzip.getBytes()), new MapEntry<>(wheel, wheel.getBytes())
+                )
+            )
         );
     }
 
     @Test
     void returnsIndexListWithFullPathHeader() {
-        final Storage storage = new InMemoryStorage();
-        storage.save(new Key.From("def/def-0.1.tar.gz"), new Content.From(new byte[]{})).join();
-        storage.save(new Key.From("def/def-0.2.whl"), new Content.From(new byte[]{})).join();
-        storage.save(new Key.From("ghi", "jkl", "hij-0.3.whl"), new Content.From(new byte[]{}))
+        final byte[] one = "1".getBytes();
+        this.storage.save(new Key.From("def/def-0.1.tar.gz"), new Content.From(one))
             .join();
+        final byte[] two = "2".getBytes();
+        this.storage.save(new Key.From("def/def-0.2.whl"), new Content.From(two)).join();
+        this.storage.save(
+            new Key.From("ghi", "jkl", "hij-0.3.whl"), new Content.From("3".getBytes())
+        ).join();
         MatcherAssert.assertThat(
-            new SliceIndex(storage).response(
+            new SliceIndex(this.storage).response(
                 new RequestLine("GET", "/def").toString(),
                 new Headers.From(SliceIndexTest.HDR_FULL_PATH, "/username/repo/def"),
                 Flowable.empty()
             ),
             new RsHasBody(
                 SliceIndexTest.html(
-                    "username/repo/def/def-0.1.tar.gz", "username/repo/def/def-0.2.whl"
+                    new MapEntry<>("username/repo/def/def-0.1.tar.gz", one),
+                    new MapEntry<>("username/repo/def/def-0.2.whl", two)
                 )
             )
         );
@@ -124,47 +149,56 @@ class SliceIndexTest {
 
     @Test
     void returnsIndexListForMixedItems() {
-        final Storage storage = new InMemoryStorage();
         final String rqline = "abc";
         final String one = "abc/file.txt";
         final String two = "abc/folder_one/file.txt";
         final String three = "abc/folder_two/abc/file.txt";
-        storage.save(new Key.From(two), new Content.From(new byte[]{})).join();
-        storage.save(new Key.From(one), new Content.From(new byte[]{})).join();
-        storage.save(new Key.From(three), new Content.From(new byte[]{}))
+        this.storage.save(new Key.From(two), new Content.From(two.getBytes())).join();
+        this.storage.save(new Key.From(one), new Content.From(one.getBytes())).join();
+        this.storage.save(new Key.From(three), new Content.From(three.getBytes()))
             .join();
-        storage.save(new Key.From("def", "ghi", "hij-0.3.whl"), new Content.From(new byte[]{}))
-            .join();
+        this.storage.save(
+            new Key.From("def", "ghi", "hij-0.3.whl"), new Content.From("sd".getBytes())
+        ).join();
         MatcherAssert.assertThat(
-            new SliceIndex(storage).response(
+            new SliceIndex(this.storage).response(
                 new RequestLine("GET", String.format("/%s", rqline)).toString(),
                 Collections.emptyList(),
                 Flowable.empty()
             ),
-            new RsHasBody(SliceIndexTest.html(one, two, three))
+            new RsHasBody(
+                SliceIndexTest.html(
+                    new MapEntry<>(one, one.getBytes()),
+                    new MapEntry<>(two, two.getBytes()),
+                    new MapEntry<>(three, three.getBytes())
+                )
+            )
         );
     }
 
     @Test
     void returnsIndexListForMixedItemsWithFullPath() {
-        final Storage storage = new InMemoryStorage();
-        storage.save(new Key.From("abc/folder_one/file.txt"), new Content.From(new byte[]{}))
+        final byte[] one = "a".getBytes();
+        final byte[] two = "b".getBytes();
+        final byte[] three = "c".getBytes();
+        this.storage.save(new Key.From("abc/folder_one/file.txt"), new Content.From(one)).join();
+        this.storage.save(new Key.From("abc/file.txt"), new Content.From(two)).join();
+        this.storage.save(new Key.From("abc/folder_two/abc/file.txt"), new Content.From(three))
             .join();
-        storage.save(new Key.From("abc/file.txt"), new Content.From(new byte[]{})).join();
-        storage.save(new Key.From("abc/folder_two/abc/file.txt"), new Content.From(new byte[]{}))
-            .join();
-        storage.save(new Key.From("def", "ghi", "hij-0.3.whl"), new Content.From(new byte[]{}))
-            .join();
+        this.storage.save(
+            new Key.From("def", "ghi", "hij-0.3.whl"), new Content.From("w".getBytes())
+        ).join();
         MatcherAssert.assertThat(
-            new SliceIndex(storage).response(
+            new SliceIndex(this.storage).response(
                 new RequestLine("GET", "/abc").toString(),
                 new Headers.From(SliceIndexTest.HDR_FULL_PATH, "/username/pypi/abc"),
                 Flowable.empty()
             ),
             new RsHasBody(
                 SliceIndexTest.html(
-                    "username/pypi/abc/file.txt", "username/pypi/abc/folder_one/file.txt",
-                    "username/pypi/abc/folder_two/abc/file.txt"
+                    new MapEntry<>("username/pypi/abc/file.txt", two),
+                    new MapEntry<>("username/pypi/abc/folder_one/file.txt", one),
+                    new MapEntry<>("username/pypi/abc/folder_two/abc/file.txt", three)
                 )
             )
         );
@@ -172,9 +206,8 @@ class SliceIndexTest {
 
     @Test
     void returnsIndexListForEmptyStorage() {
-        final Storage storage = new InMemoryStorage();
         MatcherAssert.assertThat(
-            new SliceIndex(storage).response(
+            new SliceIndex(this.storage).response(
                 new RequestLine("GET", "/def").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
@@ -185,9 +218,8 @@ class SliceIndexTest {
 
     @Test
     void returnsIndexListForEmptyStorageWithFullPath() {
-        final Storage storage = new InMemoryStorage();
         MatcherAssert.assertThat(
-            new SliceIndex(storage).response(
+            new SliceIndex(this.storage).response(
                 new RequestLine("GET", "/def").toString(),
                 new Headers.From(SliceIndexTest.HDR_FULL_PATH, "/username/pypi/def"),
                 Flowable.empty()
@@ -198,11 +230,12 @@ class SliceIndexTest {
 
     @Test
     void returnsStatusAndHeaders() {
-        final Storage storage = new InMemoryStorage();
         final String path = "some";
-        storage.save(new Key.From(path, "abc-0.0.1.tar.gz"), new Content.From(new byte[]{})).join();
+        this.storage.save(
+            new Key.From(path, "abc-0.0.1.tar.gz"), new Content.From(new byte[]{})
+        ).join();
         MatcherAssert.assertThat(
-            new SliceIndex(storage).response(
+            new SliceIndex(this.storage).response(
                 new RequestLine("GET", "/").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
@@ -210,18 +243,20 @@ class SliceIndexTest {
             new ResponseMatcher(
                 RsStatus.OK,
                 new IsHeader("Content-Type", "text/html"),
-                new IsHeader("Content-Length", "107")
+                new IsHeader("Content-Length", "179")
             )
         );
     }
 
-    private static byte[] html(final String... items) {
+    private static byte[] html(final Map.Entry<String, byte[]>... items) {
         return
             String.format(
                 "<!DOCTYPE html>\n<html>\n  </body>\n%s\n</body>\n</html>",
                 Stream.of(items).map(
                     item -> String.format(
-                        "<a href=\"/%s\">%s</a><br/>", item, Stream.of(item.split("/"))
+                        "<a href=\"/%s#sha256=%s\">%s</a><br/>", item.getKey(),
+                        DigestUtils.sha256Hex(item.getValue()),
+                        Stream.of(item.getKey().split("/"))
                             .reduce((first, second) -> second).orElse("")
                     )
                 ).collect(Collectors.joining())
