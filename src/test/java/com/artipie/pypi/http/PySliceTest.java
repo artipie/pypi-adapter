@@ -43,13 +43,15 @@ import org.hamcrest.Matchers;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * Test for {@link PySlice}.
  * @since 0.6
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.TooManyMethods"})
 class PySliceTest {
 
     /**
@@ -143,11 +145,17 @@ class PySliceTest {
         );
     }
 
-    @Test
-    void downloadsTarGz() {
-        final byte[] content = "python package".getBytes();
-        final String key = "my/my-project.tar.gz";
-        this.storage.save(new Key.From(key), new Content.From(content)).join();
+    @ParameterizedTest
+    @CsvSource({
+        "python zip package,my/zip/my-project.zip",
+        "python tar package,my-tar/my-project.tar",
+        "python package,my/my-project.tar.gz",
+        "python tar z package,my/my-project-z.tar.Z",
+        "python tar bz2 package,new/my/my-project.tar.bz2",
+        "python wheel,my/my-project.whl"
+    })
+    void downloadsVariousArchives(final String content, final String key) {
+        this.storage.save(new Key.From(key), new Content.From(content.getBytes())).join();
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine("GET", key).toString(),
@@ -156,25 +164,7 @@ class PySliceTest {
             ),
             new ResponseMatcher(
                 RsStatus.OK,
-                content
-            )
-        );
-    }
-
-    @Test
-    void downloadsWheel() {
-        final byte[] content = "python wheel".getBytes();
-        final String key = "my/my-project.whl";
-        this.storage.save(new Key.From(key), new Content.From(content)).join();
-        MatcherAssert.assertThat(
-            this.slice.response(
-                new RequestLine("GET", key).toString(),
-                Collections.emptyList(),
-                Flowable.empty()
-            ),
-            new ResponseMatcher(
-                RsStatus.OK,
-                content
+                content.getBytes()
             )
         );
     }

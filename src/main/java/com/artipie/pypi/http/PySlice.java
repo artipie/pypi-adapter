@@ -84,21 +84,7 @@ public final class PySlice extends Slice.Wrap {
                 new RtRulePath(
                     new RtRule.All(
                         new RtRule.ByMethod(RqMethod.GET),
-                        new RtRule.ByPath("^[a-zA-Z0-9]*.*\\.whl")
-                    ),
-                    new SliceAuth(
-                        new SliceWithHeaders(
-                            new LoggingSlice(new SliceDownload(storage)),
-                            new Headers.From(new ContentType("application/octet-stream"))
-                        ),
-                        new Permission.ByName("download", perms),
-                        auth
-                    )
-                ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByMethod(RqMethod.GET),
-                        new RtRule.ByPath("^[a-zA-Z0-9]*.*\\.gz")
+                        new RtRule.ByPath(".*\\.(whl|tar\\.gz|zip|tar\\.bz2|tar\\.Z|tar)")
                     ),
                     new SliceAuth(
                         new SliceWithHeaders(
