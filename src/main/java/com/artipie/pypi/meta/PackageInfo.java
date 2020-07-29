@@ -23,11 +23,7 @@
  */
 package com.artipie.pypi.meta;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import org.cactoos.io.ReaderOf;
+import java.util.stream.Stream;
 
 /**
  * Python package info.
@@ -58,13 +54,13 @@ public interface PackageInfo {
         /**
          * Input.
          */
-        private final InputStream input;
+        private final String input;
 
         /**
          * Ctor.
          * @param input Input
          */
-        public FromMetadata(final InputStream input) {
+        public FromMetadata(final String input) {
             this.input = input;
         }
 
@@ -83,23 +79,16 @@ public interface PackageInfo {
          * @param header Header name
          * @return Header value
          */
-        @SuppressWarnings("PMD.AssignmentInOperand")
         private String read(final String header) {
-            try (BufferedReader br = new BufferedReader(new ReaderOf(this.input))) {
-                final String name = String.format("%s:", header);
-                String line;
-                while ((line = br.readLine()) != null) {
-                    if (line.startsWith(name)) {
-                        this.input.reset();
-                        return line.replace(name, "").trim();
-                    }
-                }
-                throw new IllegalArgumentException(
-                    String.format("Invalid metadata file, header %s not found", header)
+            final String name = String.format("%s:", header);
+            return Stream.of(this.input.split("\n"))
+                .filter(line -> line.startsWith(name)).findFirst()
+                .map(line ->  line.replace(name, "").trim())
+                .orElseThrow(
+                    () -> new IllegalArgumentException(
+                        String.format("Invalid metadata file, header %s not found", header)
+                    )
                 );
-            } catch (final IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
         }
     }
 }

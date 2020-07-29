@@ -23,7 +23,6 @@
  */
 package com.artipie.pypi.meta;
 
-import org.cactoos.io.InputStreamOf;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -47,7 +46,7 @@ class PackageInfoFromMetadataTest {
     })
     void readsMetadata(final String name, final String version) {
         MatcherAssert.assertThat(
-            new PackageInfo.FromMetadata(new InputStreamOf(this.metadata(name, version))),
+            new PackageInfo.FromMetadata(this.metadata(name, version)),
             Matchers.allOf(
                 new MatcherOf<>(info -> { return version.equals(info.version()); }),
                 new MatcherOf<>(info -> { return name.equals(info.name()); })
@@ -56,10 +55,18 @@ class PackageInfoFromMetadataTest {
     }
 
     @Test
-    void throwsExceptionIfInfoNotFound() {
+    void throwsExceptionIfNameNotFound() {
         Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> new PackageInfo.FromMetadata(new InputStreamOf("some text")).name()
+            () -> new PackageInfo.FromMetadata("some text").name()
+        );
+    }
+
+    @Test
+    void throwsExceptionIfVersionNotFound() {
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> new PackageInfo.FromMetadata("abc 123").name()
         );
     }
 
