@@ -66,7 +66,7 @@ class PackageInfoFromMetadataTest {
     void throwsExceptionIfVersionNotFound() {
         Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> new PackageInfo.FromMetadata("abc 123").name()
+            () -> new PackageInfo.FromMetadata("abc 123").version()
         );
     }
 
