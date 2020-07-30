@@ -83,6 +83,11 @@ SOFTWARE.
       <artifactId>commons-fileupload</artifactId>
       <version>1.4</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>1.20</version>
+    </dependency>
     <!-- Test -->
     <dependency>
       <groupId>org.llorllale</groupId>
