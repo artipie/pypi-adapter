@@ -70,8 +70,9 @@ public interface Metadata {
         @Override
         public PackageInfo read() {
             final PackageInfo res;
-            if (this.file.toString().endsWith("tar") || this.file.toString().endsWith("zip")) {
-                res = this.readZipOrTar();
+            if (this.file.toString().endsWith("tar") || this.file.toString().endsWith("zip")
+                || this.file.toString().endsWith("whl")) {
+                res = this.readZipTarOrWhl();
             } else if (this.file.toString().endsWith("tar.gz")) {
                 res = this.readTarGz();
             } else {
@@ -81,10 +82,10 @@ public interface Metadata {
         }
 
         /**
-         * Reads metadata from zip or tar archive.
+         * Reads metadata from zip, tar or wheel archive.
          * @return PackageInfo
          */
-        private PackageInfo readZipOrTar() {
+        private PackageInfo readZipTarOrWhl() {
             try (
                 ArchiveInputStream input = new ArchiveStreamFactory().createArchiveInputStream(
                     new BufferedInputStream(Files.newInputStream(this.file))
@@ -132,7 +133,7 @@ public interface Metadata {
                 if (!input.canReadEntryData(entry) || entry.isDirectory()) {
                     continue;
                 }
-                if (entry.getName().contains("PKG-INFO")) {
+                if (entry.getName().contains("PKG-INFO") || entry.getName().contains("METADATA")) {
                     return new PackageInfo.FromMetadata(
                         IOUtils.toString(input, StandardCharsets.US_ASCII)
                     );

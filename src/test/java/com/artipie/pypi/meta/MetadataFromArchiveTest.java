@@ -41,7 +41,8 @@ class MetadataFromArchiveTest {
     @CsvSource({
         "pypi_repo/artipie-sample-0.2.zip",
         "pypi_repo/artipie-sample-0.2.tar",
-        "pypi_repo/artipie-sample-0.2.tar.gz"
+        "pypi_repo/artipie-sample-0.2.tar.gz",
+        "pypi_repo/artipie_sample-0.2-py3-none-any.whl"
     })
     void readsFromTarGz(final String filename) {
         MatcherAssert.assertThat(
