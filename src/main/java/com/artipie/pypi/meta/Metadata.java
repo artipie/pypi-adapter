@@ -61,20 +61,34 @@ public interface Metadata {
         private final Path file;
 
         /**
+         * Name of the file.
+         */
+        private final String filename;
+
+        /**
+         * Ctor.
+         * @param file Path to archive
+         * @param filename Filename
+         */
+        public FromArchive(final Path file, final String filename) {
+            this.file = file;
+            this.filename = filename;
+        }
+
+        /**
          * Ctor.
          * @param file Path to archive
          */
         public FromArchive(final Path file) {
-            this.file = file;
+            this(file, file.getFileName().toString());
         }
 
         @Override
         public PackageInfo read() {
             final PackageInfo res;
-            final String filename = this.file.toString();
-            if (Stream.of("tar", "zip", "whl").anyMatch(filename::endsWith)) {
+            if (Stream.of("tar", "zip", "whl").anyMatch(this.filename::endsWith)) {
                 res = this.readZipTarOrWhl();
-            } else if (filename.endsWith("tar.gz")) {
+            } else if (this.filename.endsWith("tar.gz")) {
                 res = this.readTarGz();
             } else {
                 throw new UnsupportedOperationException("Unsupported archive type");
