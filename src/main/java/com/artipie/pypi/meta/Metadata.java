@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -70,10 +71,10 @@ public interface Metadata {
         @Override
         public PackageInfo read() {
             final PackageInfo res;
-            if (this.file.toString().endsWith("tar") || this.file.toString().endsWith("zip")
-                || this.file.toString().endsWith("whl")) {
+            final String filename = this.file.toString();
+            if (Stream.of("tar", "zip", "whl").anyMatch(filename::endsWith)) {
                 res = this.readZipTarOrWhl();
-            } else if (this.file.toString().endsWith("tar.gz")) {
+            } else if (filename.endsWith("tar.gz")) {
                 res = this.readTarGz();
             } else {
                 throw new UnsupportedOperationException("Unsupported archive type");
