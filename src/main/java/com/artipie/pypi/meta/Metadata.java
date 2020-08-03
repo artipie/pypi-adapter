@@ -77,7 +77,7 @@ public interface Metadata {
         public PackageInfo read() {
             final PackageInfo res;
             final String filename = this.file.toString();
-            if (Stream.of("tar", "zip", "whl").anyMatch(filename::endsWith)) {
+            if (Stream.of("tar", "zip", "whl", "egg").anyMatch(filename::endsWith)) {
                 res = this.readZipTarOrWhl();
             } else if (filename.endsWith("tar.gz")) {
                 res = this.readTarGz();
