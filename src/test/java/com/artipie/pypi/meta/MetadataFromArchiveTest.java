@@ -42,6 +42,7 @@ class MetadataFromArchiveTest {
         "pypi_repo/artipie-sample-0.2.zip",
         "pypi_repo/artipie-sample-0.2.tar",
         "pypi_repo/artipie-sample-0.2.tar.gz",
+        "pypi_repo/artipie_sample-2.1-py3.7.egg",
         "pypi_repo/artipie_sample-0.2-py3-none-any.whl"
     })
     void readsFromTarGz(final String filename) {
