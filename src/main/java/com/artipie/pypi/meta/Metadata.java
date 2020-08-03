@@ -24,7 +24,9 @@
 package com.artipie.pypi.meta;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,12 +36,15 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.IOUtils;
 
 /**
  * Python package metadata.
  * @since 0.6
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public interface Metadata {
 
@@ -76,10 +81,46 @@ public interface Metadata {
                 res = this.readZipTarOrWhl();
             } else if (filename.endsWith("tar.gz")) {
                 res = this.readTarGz();
+            } else if (filename.endsWith("tar.Z")) {
+                res = this.readTarZ();
+            } else if (filename.endsWith("tar.bz2")) {
+                res = this.readBz();
             } else {
                 throw new UnsupportedOperationException("Unsupported archive type");
             }
             return res;
+        }
+
+        /**
+         * Reads tar.Z files.
+         * @return PackageInfo
+         */
+        private PackageInfo readTarZ() {
+            try (
+                ZCompressorInputStream origin = new ZCompressorInputStream(
+                    new BufferedInputStream(Files.newInputStream(this.file))
+                )
+            ) {
+                return FromArchive.unpack(origin);
+            } catch (final IOException | ArchiveException ex) {
+                throw FromArchive.error(ex);
+            }
+        }
+
+        /**
+         * Reads tar.Z files.
+         * @return PackageInfo
+         */
+        private PackageInfo readBz() {
+            try (
+                BZip2CompressorInputStream origin = new BZip2CompressorInputStream(
+                    new BufferedInputStream(Files.newInputStream(this.file))
+                )
+            ) {
+                return FromArchive.unpack(origin);
+            } catch (final IOException | ArchiveException ex) {
+                throw FromArchive.error(ex);
+            }
         }
 
         /**
@@ -109,6 +150,25 @@ public interface Metadata {
                 return FromArchive.readArchive(tar);
             } catch (final IOException ex) {
                 throw FromArchive.error(ex);
+            }
+        }
+
+        /**
+         * Reads archive from compressor input stream, creates ArchiveInputStream and
+         * calls {@link Metadata.FromArchive#readArchive} to extract metadata info.
+         * @param origin Origin input stream
+         * @return Package info
+         * @throws IOException On IO error
+         * @throws ArchiveException In case on problems to unpack
+         */
+        private static PackageInfo unpack(final InputStream origin)
+            throws IOException, ArchiveException {
+            try (
+                ArchiveInputStream input = new ArchiveStreamFactory().createArchiveInputStream(
+                    new BufferedInputStream(new ByteArrayInputStream(IOUtils.toByteArray(origin)))
+                )
+            ) {
+                return readArchive(input);
             }
         }
 
