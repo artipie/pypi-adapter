@@ -36,6 +36,7 @@ import io.reactivex.Flowable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -52,9 +53,9 @@ class WheelSliceTest {
     @Test
     void savesContentAndReturnsOk() throws IOException {
         final Storage storage = new InMemoryStorage();
-        final String boundary = "123";
-        final String filename = "part-0.1.tar.gz";
-        final byte[] body = "some".getBytes();
+        final String boundary = "098";
+        final String filename = "artipie-sample-0.2.tar";
+        final byte[] body = this.resource("pypi_repo/artipie-sample-0.2.tar");
         MatcherAssert.assertThat(
             "Returns CREATED status",
             new WheelSlice(storage).response(
@@ -67,32 +68,7 @@ class WheelSliceTest {
         MatcherAssert.assertThat(
             "Saves content to storage",
             new PublisherAs(
-                storage.value(new Key.From("part", filename)).join()
-            ).bytes().toCompletableFuture().join(),
-            new IsEqual<>(body)
-        );
-    }
-
-    @Test
-    void savesContentByPathAndReturnsOk() throws IOException {
-        final Storage storage = new InMemoryStorage();
-        final String boundary = "098";
-        final String filename = "myproject-0.1-py3-any-none.whl";
-        final String path = "sample";
-        final byte[] body = "python code".getBytes();
-        MatcherAssert.assertThat(
-            "Returns CREATED status",
-            new WheelSlice(storage).response(
-                new RequestLine("GET", String.format("/%s", path)).toString(),
-                new Headers.From(new ContentType(String.format("Multipart;boundary=%s", boundary))),
-                Flowable.fromArray(ByteBuffer.wrap(this.multipartBody(body, boundary, filename)))
-            ),
-            new RsHasStatus(RsStatus.CREATED)
-        );
-        MatcherAssert.assertThat(
-            "Saves content to storage",
-            new PublisherAs(
-                storage.value(new Key.From(path, "myproject", filename)).join()
+                storage.value(new Key.From("artipie-sample", filename)).join()
             ).bytes().toCompletableFuture().join(),
             new IsEqual<>(body)
         );
@@ -102,22 +78,29 @@ class WheelSliceTest {
     void savesContentByNormalizedNameAndReturnsOk() throws IOException {
         final Storage storage = new InMemoryStorage();
         final String boundary = "876";
-        final String filename = "My_Super.Project-0.3-py2-any-linux_x86.whl";
+        final String filename = "ABtests-0.0.2.1-py2.py3-none-any.whl";
         final String path = "super";
-        final byte[] body = "python code".getBytes();
+        final byte[] body = this.resource("pypi_repo/ABtests-0.0.2.1-py2.py3-none-any.whl");
         MatcherAssert.assertThat(
             "Returns CREATED status",
             new WheelSlice(storage).response(
                 new RequestLine("GET", String.format("/%s", path)).toString(),
                 new Headers.From(new ContentType(String.format("Multipart;boundary=%s", boundary))),
-                Flowable.fromArray(ByteBuffer.wrap(this.multipartBody(body, boundary, filename)))
+                Flowable.fromArray(
+                    ByteBuffer.wrap(
+                        this.multipartBody(
+                            body,
+                            boundary, filename
+                        )
+                    )
+                )
             ),
             new RsHasStatus(RsStatus.CREATED)
         );
         MatcherAssert.assertThat(
             "Saves content to storage",
             new PublisherAs(
-                storage.value(new Key.From(path, "my-super-project", filename)).join()
+                storage.value(new Key.From(path, "abtests", filename)).join()
             ).bytes().toCompletableFuture().join(),
             new IsEqual<>(body)
         );
@@ -150,6 +133,16 @@ class WheelSliceTest {
                 .build()
                 .writeTo(res);
             return res.toByteArray();
+        }
+    }
+
+    private byte[] resource(final String name) {
+        try {
+            return IOUtils.toByteArray(
+                Thread.currentThread().getContextClassLoader().getResourceAsStream(name)
+            );
+        } catch (final IOException ex) {
+            throw new IllegalStateException("Failed to load test recourses", ex);
         }
     }
 
