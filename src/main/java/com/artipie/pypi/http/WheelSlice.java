@@ -38,6 +38,8 @@ import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.KeyFromPath;
 import com.artipie.pypi.NormalizedProjectName;
 import com.artipie.pypi.meta.Metadata;
+import com.artipie.pypi.meta.PackageInfo;
+import com.artipie.pypi.meta.ValidFilename;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -80,21 +82,34 @@ final class WheelSlice implements Slice {
         final Path file = path.resolve(UUID.randomUUID().toString());
         final Storage temp = new FileStorage(path);
         final Key.From key = new Key.From(file.getFileName().toString());
+        // @checkstyle ReturnCountCheck (50 lines)
         return new AsyncResponse(
             new Multipart(iterable, publisher).content().thenCompose(
                 data -> temp.save(key, new Content.From(data.bytes()))
                     .thenCompose(nothing -> new Copy(temp, new ListOf<>(key)).copy(this.storage))
                     .thenCompose(
-                        ignored -> this.storage.move(
-                            key,
-                            new Key.From(
-                                new KeyFromPath(new RequestLineFrom(line).uri().toString()),
-                                new NormalizedProjectName.Simple(
-                                    new Metadata.FromArchive(file, data.fileName()).read().name()
-                                ).value(),
-                                data.fileName()
-                            )
-                        )
+                        ignored -> {
+                            final PackageInfo info =
+                                new Metadata.FromArchive(file, data.fileName()).read();
+                            if (new ValidFilename(info, data.fileName()).valid()) {
+                                return this.storage.move(
+                                    key,
+                                    new Key.From(
+                                        new KeyFromPath(new RequestLineFrom(line).uri().toString()),
+                                        new NormalizedProjectName.Simple(info.name()).value(),
+                                        data.fileName()
+                                    )
+                                );
+                            } else {
+                                return this.storage.delete(key).thenApply(
+                                    nothing -> {
+                                        throw new IllegalArgumentException(
+                                            "Uploaded filename does not correspond to file metadata"
+                                        );
+                                    }
+                                );
+                            }
+                        }
                     )
             ).handle(
                 (ignored, throwable) -> {

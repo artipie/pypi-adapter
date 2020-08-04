@@ -107,6 +107,35 @@ class WheelSliceTest {
     }
 
     @Test
+    void returnsBadRequestIfFileNameIsInvalid() throws IOException {
+        final Storage storage = new InMemoryStorage();
+        final String boundary = "876";
+        final String filename = "artipie-sample-2020.tar.bz2";
+        final byte[] body = this.resource("pypi_repo/artipie-sample-2.1.tar.bz2");
+        MatcherAssert.assertThat(
+            "Returns BAD_REQUEST status",
+            new WheelSlice(storage).response(
+                new RequestLine("GET", "/").toString(),
+                new Headers.From(new ContentType(String.format("Multipart;boundary=%s", boundary))),
+                Flowable.fromArray(
+                    ByteBuffer.wrap(
+                        this.multipartBody(
+                            body,
+                            boundary, filename
+                        )
+                    )
+                )
+            ),
+            new RsHasStatus(RsStatus.BAD_REQUEST)
+        );
+        MatcherAssert.assertThat(
+            "Storage is empty",
+            storage.list(Key.ROOT).join().size(),
+            new IsEqual<>(0)
+        );
+    }
+
+    @Test
     void returnsBadRequestIfFileInvalid() throws IOException {
         final Storage storage = new InMemoryStorage();
         final String boundary = "000";
