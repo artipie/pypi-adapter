@@ -37,7 +37,7 @@ class ValidFilenameTest {
 
     @ParameterizedTest
     @CsvSource({
-        "my-project,0.3,my-project-0.3.tar,true",
+        "my-project,0.3,my-project-0.3.tar.gz,true",
         "my-project,0.3,my-project-0.4.tar,false",
         "Another_project,123.93,Another_project-123.93.zip,true",
         "very-difficult-project,1.0a2,very-difficult-project-1.0a2-py3-any-none.whl,true",

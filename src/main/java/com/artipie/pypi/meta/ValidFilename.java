@@ -38,7 +38,7 @@ public final class ValidFilename {
      * 'Artipie-Testpkg-0.0.3.tar.gz', then package name is 'Artipie-Testpkg'.
      */
     private static final Pattern ARCHIVE_PTRN =
-        Pattern.compile("(?<name>.*)-(?<version>[0-9a-z.]+)\\.([a-zA-Z.]+)");
+        Pattern.compile("(?<name>.*)-(?<version>[0-9a-z.]+?)\\.([a-zA-Z.]+)");
 
     /**
      * Python wheel package name pattern, for more details see
