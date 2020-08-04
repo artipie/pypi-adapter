@@ -84,7 +84,7 @@ public final class PySlice extends Slice.Wrap {
                 new RtRulePath(
                     new RtRule.All(
                         new RtRule.ByMethod(RqMethod.GET),
-                        new RtRule.ByPath(".*\\.(whl|tar\\.gz|zip|tar\\.bz2|tar\\.Z|tar)")
+                        new RtRule.ByPath(".*\\.(whl|tar\\.gz|zip|tar\\.bz2|tar\\.Z|tar|egg)")
                     ),
                     new SliceAuth(
                         new SliceWithHeaders(

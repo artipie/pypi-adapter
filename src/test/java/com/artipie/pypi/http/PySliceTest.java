@@ -152,7 +152,8 @@ class PySliceTest {
         "python package,my/my-project.tar.gz",
         "python tar z package,my/my-project-z.tar.Z",
         "python tar bz2 package,new/my/my-project.tar.bz2",
-        "python wheel,my/my-project.whl"
+        "python wheel,my/my-project.whl",
+        "python egg package,eggs/python-egg.egg"
     })
     void downloadsVariousArchives(final String content, final String key) {
         this.storage.save(new Key.From(key), new Content.From(content.getBytes())).join();
