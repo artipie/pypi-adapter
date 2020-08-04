@@ -25,8 +25,10 @@
 package com.artipie.pypi.http;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.Copy;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.fs.FileStorage;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
@@ -36,13 +38,14 @@ import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.KeyFromPath;
 import com.artipie.pypi.NormalizedProjectName;
 import com.artipie.pypi.meta.Metadata;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.UUID;
 import org.apache.commons.io.FileUtils;
+import org.cactoos.list.ListOf;
+import org.cactoos.scalar.Unchecked;
 import org.reactivestreams.Publisher;
 
 /**
@@ -73,48 +76,36 @@ final class WheelSlice implements Slice {
         final Iterable<Map.Entry<String, String>> iterable,
         final Publisher<ByteBuffer> publisher
     ) {
+        final Path path = new Unchecked<>(() -> Files.createTempDirectory("py-artifact-")).value();
+        final Path file = path.resolve(UUID.randomUUID().toString());
+        final Storage temp = new FileStorage(path);
+        final Key.From key = new Key.From(file.getFileName().toString());
         return new AsyncResponse(
             new Multipart(iterable, publisher).content().thenCompose(
-                data -> {
-                    final Path path = WheelSlice.save(data.bytes());
-                    return this.storage.save(
-                        new Key.From(
-                            new KeyFromPath(new RequestLineFrom(line).uri().toString()),
-                            new NormalizedProjectName.Simple(
-                                new Metadata.FromArchive(path, data.fileName()).read().name()
-                            ).value(),
-                            data.fileName()
-                        ),
-                        new Content.From(data.bytes())
-                    ).thenApply(nothing -> path);
-                }
+                data -> temp.save(key, new Content.From(data.bytes()))
+                    .thenCompose(nothing -> new Copy(temp, new ListOf<>(key)).copy(this.storage))
+                    .thenCompose(
+                        ignored -> this.storage.move(
+                            key,
+                            new Key.From(
+                                new KeyFromPath(new RequestLineFrom(line).uri().toString()),
+                                new NormalizedProjectName.Simple(
+                                    new Metadata.FromArchive(file, data.fileName()).read().name()
+                                ).value(),
+                                data.fileName()
+                            )
+                        )
+                    )
             ).handle(
-                (path, throwable) -> {
+                (ignored, throwable) -> {
                     Response res = new RsWithStatus(RsStatus.CREATED);
                     if (throwable != null) {
                         res = new RsWithStatus(RsStatus.BAD_REQUEST);
                     }
-                    if (path != null) {
-                        FileUtils.deleteQuietly(path.toFile());
-                    }
+                    FileUtils.deleteQuietly(path.toFile());
                     return res;
                 }
             )
         );
-    }
-
-    /**
-     * Saves data to temp file.
-     * @param data Data
-     * @return Path to the temp file
-     */
-    private static Path save(final byte[] data) {
-        try {
-            final Path tmp = Files.createTempFile("py-artifact-", "");
-            Files.write(tmp, data);
-            return tmp;
-        } catch (final IOException err) {
-            throw new UncheckedIOException(err);
-        }
     }
 }
