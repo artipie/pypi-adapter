@@ -39,6 +39,7 @@ import java.nio.ByteBuffer;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
@@ -130,8 +131,8 @@ class WheelSliceTest {
         );
         MatcherAssert.assertThat(
             "Storage is empty",
-            storage.list(Key.ROOT).join().size(),
-            new IsEqual<>(0)
+            storage.list(Key.ROOT).join(),
+            new IsEmptyCollection<>()
         );
     }
 

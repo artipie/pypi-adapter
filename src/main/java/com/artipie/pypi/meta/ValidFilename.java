@@ -26,6 +26,7 @@ package com.artipie.pypi.meta;
 import com.artipie.pypi.NormalizedProjectName;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Python package valid filename.
@@ -72,16 +73,16 @@ public final class ValidFilename {
      * @return True if filename corresponds to project metadata, false - otherwise.
      */
     public boolean valid() {
-        final Matcher matcher;
-        if (this.filename.endsWith("whl")) {
-            matcher = ValidFilename.WHEEL_PTRN.matcher(this.filename);
-        } else {
-            matcher = ValidFilename.ARCHIVE_PTRN.matcher(this.filename);
-        }
-        final String name = new NormalizedProjectName.Simple(this.data.name()).value();
-        return matcher.matches()
-            && name.equals(new NormalizedProjectName.Simple(matcher.group("name")).value())
-            && this.data.version().equals(matcher.group("version"));
+        return Stream.of(
+            ValidFilename.WHEEL_PTRN.matcher(this.filename),
+            ValidFilename.ARCHIVE_PTRN.matcher(this.filename)
+        ).filter(Matcher::matches).findFirst().map(
+            matcher -> {
+                final String name = new NormalizedProjectName.Simple(this.data.name()).value();
+                return name.equals(new NormalizedProjectName.Simple(matcher.group("name")).value())
+                    && this.data.version().equals(matcher.group("version"));
+            }
+        ).orElse(false);
     }
 
 }
