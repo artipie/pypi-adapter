@@ -33,7 +33,7 @@ import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.headers.ContentType;
 import com.artipie.http.rq.RequestLineFrom;
-import com.artipie.http.rq.RqHeaders;
+import com.artipie.http.rq.RequestLinePrefix;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
@@ -56,11 +56,6 @@ import org.reactivestreams.Publisher;
 final class SliceIndex implements Slice {
 
     /**
-     * Full path header name.
-     */
-    private static final String HDR_FULL_PATH = "X-FullPath";
-
-    /**
      * Artipie artifacts storage.
      */
     private final Storage storage;
@@ -80,7 +75,7 @@ final class SliceIndex implements Slice {
         final Publisher<ByteBuffer> publisher
     ) {
         final Key rqkey = new KeyFromPath(new RequestLineFrom(line).uri().toString());
-        final String prefix = SliceIndex.prefix(headers, rqkey.string());
+        final String prefix = new RequestLinePrefix(rqkey.string(), headers).get();
         return new AsyncResponse(
             SingleInterop.fromFuture(this.storage.list(rqkey))
                 .flatMapPublisher(Flowable::fromIterable)
@@ -113,30 +108,6 @@ final class SliceIndex implements Slice {
                     )
                 )
         );
-    }
-
-    /**
-     * Get prefix from X-FullPath header value and request path.
-     * @param headers Headers from request
-     * @param path Path from request
-     * @return Full path
-     */
-    private static String prefix(final Iterable<Map.Entry<String, String>> headers,
-        final String path) {
-        return new RqHeaders(headers, SliceIndex.HDR_FULL_PATH).stream()
-            .findFirst()
-            .map(
-                item -> {
-                    final String res;
-                    final String first = path.split("/")[0];
-                    if (item.indexOf(first) > 0) {
-                        res = item.substring(0, item.indexOf(first) - 1);
-                    } else {
-                        res = item;
-                    }
-                    return res;
-                }
-            ).orElse("");
     }
 
 }
