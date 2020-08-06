@@ -24,7 +24,6 @@
 package com.artipie.pypi;
 
 import java.util.Locale;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -47,64 +46,6 @@ public interface NormalizedProjectName {
      * @return String value
      */
     String value();
-
-    /**
-     * Normalized python project name from uploading filename.
-     *
-     * Uploaded file name has the following format:
-     * [project_name]-[version][other_info].[extension],
-     * where {@code project_name} and {@code version} are separated by -, extension can be either
-     * tar.gz or whl, {@code other_info} is specified for whl packages. {@code project_name} can
-     * contain ASCII alphabet, ASCII numbers, ., -, and _. This class extracts {@code project_name}
-     * and normalise it by replacing ., -, or _ with a single - and making all characters lowecase.
-     *
-     * @since 0.6
-     */
-    final class FromFilename implements NormalizedProjectName {
-
-        /**
-         * Pattern to obtain package name from uploaded file name: for file name
-         * 'Artipie-Testpkg-0.0.3.tar.gz', then package name is 'Artipie-Testpkg'.
-         */
-        private static final Pattern ARCHIVE_PTRN = Pattern.compile("(.*)-.*");
-
-        /**
-         * Python wheel package name pattern, for more details see
-         * <a href="https://www.python.org/dev/peps/pep-0427/#file-name-convention">docs</a>.
-         */
-        private static final Pattern WHEEL_PTRN =
-            Pattern.compile("(.*?)-([0-9a-z.]+)(-\\d+)?-((py\\d.?)+)-(.*)-(.*).whl");
-
-        /**
-         * File name.
-         */
-        private final String filename;
-
-        /**
-         * Ctor.
-         * @param filename Filename
-         */
-        public FromFilename(final String filename) {
-            this.filename = filename;
-        }
-
-        @Override
-        public String value() {
-            final Matcher matcher;
-            if (this.filename.endsWith("whl")) {
-                matcher = FromFilename.WHEEL_PTRN.matcher(this.filename);
-            } else {
-                matcher = FromFilename.ARCHIVE_PTRN.matcher(this.filename);
-            }
-            if (matcher.matches()) {
-                return new Simple(matcher.group(1)).value();
-            }
-            throw new IllegalArgumentException(
-                // @checkstyle LineLengthCheck (1 line)
-                "Python project filename must have format <project_name>-<version>.whl or <project_name>-<version>.tar.gz"
-            );
-        }
-    }
 
     /**
      * Simple {@link NormalizedProjectName} implementation: normalise given name
