@@ -23,8 +23,7 @@
  */
 package com.artipie.pypi.meta;
 
-import java.net.URISyntaxException;
-import java.nio.file.Path;
+import com.artipie.asto.test.TestResource;
 import java.nio.file.Paths;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -51,7 +50,7 @@ class MetadataFromArchiveTest {
     })
     void readsFromTarGz(final String filename) {
         MatcherAssert.assertThat(
-            new Metadata.FromArchive(this.resource(filename)).read().name(),
+            new Metadata.FromArchive(new TestResource(filename).asPath()).read().name(),
             new IsEqual<>("artipie-sample")
         );
     }
@@ -62,16 +61,6 @@ class MetadataFromArchiveTest {
             UnsupportedOperationException.class,
             () -> new Metadata.FromArchive(Paths.get("some/archive.tar.br")).read()
         );
-    }
-
-    private Path resource(final String name) {
-        try {
-            return Paths.get(
-                Thread.currentThread().getContextClassLoader().getResource(name).toURI()
-            );
-        } catch (final URISyntaxException ex) {
-            throw new IllegalStateException("Failed to load test recourses", ex);
-        }
     }
 
 }
