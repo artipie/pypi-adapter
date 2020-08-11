@@ -27,6 +27,7 @@ package com.artipie.pypi.http;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.ContentDigest;
+import com.artipie.asto.ext.Digests;
 import com.artipie.asto.ext.KeyLastPart;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -82,7 +83,7 @@ final class SliceIndex implements Slice {
                 .flatMapSingle(
                     key -> Single.fromFuture(
                         this.storage.value(key).thenCompose(
-                            value -> new ContentDigest(value, ContentDigest.Digests.SHA256).hex()
+                            value -> new ContentDigest(value, Digests.SHA256).hex()
                         ).thenApply(
                             hex -> String.format(
                                 "<a href=\"%s#sha256=%s\">%s</a><br/>",

@@ -23,20 +23,18 @@
  */
 package com.artipie.pypi.http;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.asto.test.TestResource;
 import com.artipie.http.auth.BasicIdentities;
 import com.artipie.http.auth.Identities;
 import com.artipie.http.auth.Permissions;
 import com.artipie.pypi.PypiContainer;
 import com.artipie.vertx.VertxSliceServer;
 import io.vertx.reactivex.core.Vertx;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
 import org.cactoos.list.ListOf;
 import org.hamcrest.MatcherAssert;
@@ -202,18 +200,9 @@ public final class PySliceITCase {
         );
     }
 
-    private void putPackages(final Storage storage) throws Exception {
-        storage.save(
-            new Key.From("alarmtime", "alarmtime-0.1.5.tar.gz"),
-            new Content.From(
-                Files.readAllBytes(
-                    Paths.get(
-                        Thread.currentThread().getContextClassLoader()
-                        .getResource("pypi_repo/alarmtime-0.1.5.tar.gz").toURI()
-                    )
-                )
-            )
-        ).join();
+    private void putPackages(final Storage storage) {
+        new TestResource("pypi_repo/alarmtime-0.1.5.tar.gz")
+            .saveTo(storage, new Key.From("alarmtime", "alarmtime-0.1.5.tar.gz"));
     }
 
     private int startServer(final Storage storage, final Permissions perms,

@@ -27,6 +27,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.asto.test.TestResource;
 import com.artipie.http.Headers;
 import com.artipie.http.headers.ContentType;
 import com.artipie.http.hm.RsHasStatus;
@@ -36,7 +37,6 @@ import io.reactivex.Flowable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.collection.IsEmptyCollection;
@@ -56,7 +56,7 @@ class WheelSliceTest {
         final Storage storage = new InMemoryStorage();
         final String boundary = "098";
         final String filename = "artipie-sample-0.2.tar";
-        final byte[] body = this.resource("pypi_repo/artipie-sample-0.2.tar");
+        final byte[] body = new TestResource("pypi_repo/artipie-sample-0.2.tar").asBytes();
         MatcherAssert.assertThat(
             "Returns CREATED status",
             new WheelSlice(storage).response(
@@ -81,7 +81,8 @@ class WheelSliceTest {
         final String boundary = "876";
         final String filename = "ABtests-0.0.2.1-py2.py3-none-any.whl";
         final String path = "super";
-        final byte[] body = this.resource("pypi_repo/ABtests-0.0.2.1-py2.py3-none-any.whl");
+        final byte[] body = new TestResource("pypi_repo/ABtests-0.0.2.1-py2.py3-none-any.whl")
+            .asBytes();
         MatcherAssert.assertThat(
             "Returns CREATED status",
             new WheelSlice(storage).response(
@@ -112,7 +113,7 @@ class WheelSliceTest {
         final Storage storage = new InMemoryStorage();
         final String boundary = "876";
         final String filename = "artipie-sample-2020.tar.bz2";
-        final byte[] body = this.resource("pypi_repo/artipie-sample-2.1.tar.bz2");
+        final byte[] body = new TestResource("pypi_repo/artipie-sample-2.1.tar.bz2").asBytes();
         MatcherAssert.assertThat(
             "Returns BAD_REQUEST status",
             new WheelSlice(storage).response(
@@ -163,16 +164,6 @@ class WheelSliceTest {
                 .build()
                 .writeTo(res);
             return res.toByteArray();
-        }
-    }
-
-    private byte[] resource(final String name) {
-        try {
-            return IOUtils.toByteArray(
-                Thread.currentThread().getContextClassLoader().getResourceAsStream(name)
-            );
-        } catch (final IOException ex) {
-            throw new IllegalStateException("Failed to load test recourses", ex);
         }
     }
 
