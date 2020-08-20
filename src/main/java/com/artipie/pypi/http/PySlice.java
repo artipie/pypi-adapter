@@ -37,6 +37,7 @@ import com.artipie.http.headers.ContentType;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.rt.ByMethodsRule;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
@@ -83,7 +84,7 @@ public final class PySlice extends Slice.Wrap {
             new SliceRoute(
                 new RtRulePath(
                     new RtRule.All(
-                        new RtRule.ByMethod(RqMethod.GET),
+                        new ByMethodsRule(RqMethod.GET),
                         new RtRule.ByPath(".*\\.(whl|tar\\.gz|zip|tar\\.bz2|tar\\.Z|tar|egg)")
                     ),
                     new SliceAuth(
@@ -96,7 +97,7 @@ public final class PySlice extends Slice.Wrap {
                     )
                 ),
                 new RtRulePath(
-                    new RtRule.ByMethod(RqMethod.POST),
+                    new ByMethodsRule(RqMethod.POST),
                     new SliceAuth(
                         new WheelSlice(storage),
                         new Permission.ByName("upload", perms),
@@ -105,7 +106,7 @@ public final class PySlice extends Slice.Wrap {
                 ),
                 new RtRulePath(
                     new RtRule.All(
-                        new RtRule.ByMethod(RqMethod.GET),
+                        new ByMethodsRule(RqMethod.GET),
                         new RtRule.ByPath("(^\\/)|(.*(\\/[a-z0-9\\-]+?\\/?$))")
                     ),
                     new SliceAuth(
@@ -116,7 +117,7 @@ public final class PySlice extends Slice.Wrap {
                 ),
                 new RtRulePath(
                     new RtRule.All(
-                        new RtRule.ByMethod(RqMethod.GET)
+                        new ByMethodsRule(RqMethod.GET)
                     ),
                     new SliceAuth(
                         new LoggingSlice(new RedirectSlice()),
