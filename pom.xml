@@ -48,6 +48,10 @@ SOFTWARE.
       <name>artem.lazarev</name>
       <email>artem.lazarev@gmail.com</email>
     </developer>
+    <developer>
+      <name>Alena Gerasimova</name>
+      <email>olena.gerasimova@gmail.com</email>
+    </developer>
   </developers>
   <scm>
     <connection>scm:git:git://github.com/artipie/pypi-adapter.git</connection>
@@ -59,11 +63,6 @@ SOFTWARE.
   </properties>
   <dependencies>
     <dependency>
-      <groupId>org.jsoup</groupId>
-      <artifactId>jsoup</artifactId>
-      <version>1.12.1</version>
-    </dependency>
-    <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>asto</artifactId>
       <version>0.26</version>
@@ -72,11 +71,6 @@ SOFTWARE.
       <groupId>com.artipie</groupId>
       <artifactId>http</artifactId>
       <version>0.15.7</version>
-    </dependency>
-    <dependency>
-      <groupId>javax.xml.bind</groupId>
-      <artifactId>jaxb-api</artifactId>
-      <version>2.3.0</version>
     </dependency>
     <dependency>
       <groupId>commons-fileupload</groupId>
