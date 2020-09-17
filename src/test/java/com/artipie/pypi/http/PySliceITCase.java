@@ -28,6 +28,7 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.test.TestResource;
+import com.artipie.http.auth.Authentication;
 import com.artipie.http.auth.BasicIdentities;
 import com.artipie.http.auth.Identities;
 import com.artipie.http.auth.Permissions;
@@ -189,9 +190,9 @@ public final class PySliceITCase {
     private Identities auth(final String user, final String pswd) {
         return new BasicIdentities(
             (name, pass) -> {
-                final Optional<String> res;
+                final Optional<Authentication.User> res;
                 if (user.equals(name) && pswd.equals(pass)) {
-                    res = Optional.of(name);
+                    res = Optional.of(new Authentication.User(name));
                 } else {
                     res = Optional.empty();
                 }
