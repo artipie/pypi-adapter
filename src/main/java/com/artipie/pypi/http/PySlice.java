@@ -27,6 +27,7 @@ package com.artipie.pypi.http;
 import com.artipie.asto.Storage;
 import com.artipie.http.Headers;
 import com.artipie.http.Slice;
+import com.artipie.http.auth.Action;
 import com.artipie.http.auth.Authentication;
 import com.artipie.http.auth.BasicIdentities;
 import com.artipie.http.auth.Identities;
@@ -92,7 +93,7 @@ public final class PySlice extends Slice.Wrap {
                             new LoggingSlice(new SliceDownload(storage)),
                             new Headers.From(new ContentType("application/octet-stream"))
                         ),
-                        new Permission.ByName("download", perms),
+                        new Permission.ByName(perms, Action.Standard.READ),
                         auth
                     )
                 ),
@@ -100,7 +101,7 @@ public final class PySlice extends Slice.Wrap {
                     new ByMethodsRule(RqMethod.POST),
                     new SliceAuth(
                         new WheelSlice(storage),
-                        new Permission.ByName("upload", perms),
+                        new Permission.ByName(perms, Action.Standard.WRITE),
                         auth
                     )
                 ),
@@ -121,7 +122,7 @@ public final class PySlice extends Slice.Wrap {
                     ),
                     new SliceAuth(
                         new LoggingSlice(new RedirectSlice()),
-                        new Permission.ByName("download", perms),
+                        new Permission.ByName(perms, Action.Standard.READ),
                         auth
                     )
                 ),
