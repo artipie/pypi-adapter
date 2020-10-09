@@ -112,7 +112,7 @@ public final class PySlice extends Slice.Wrap {
                     ),
                     new SliceAuth(
                         new LoggingSlice(new SliceIndex(storage)),
-                        new Permission.ByName("download", perms),
+                        new Permission.ByName(perms, Action.Standard.READ),
                         auth
                     )
                 ),
