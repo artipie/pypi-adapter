@@ -44,7 +44,6 @@ import com.artipie.http.slice.LoggingSlice;
 import com.artipie.http.slice.SliceDownload;
 import com.artipie.http.slice.SliceSimple;
 import com.artipie.http.slice.SliceWithHeaders;
-import java.util.Optional;
 
 /**
  * PyPi HTTP entry point.
@@ -60,11 +59,7 @@ public final class PySlice extends Slice.Wrap {
      * @param storage The storage and default parameters for free access.
      */
     public PySlice(final Storage storage) {
-        this(
-            storage,
-            Permissions.FREE,
-            (user, pswd) -> Optional.of(new Authentication.User("anonymous"))
-        );
+        this(storage, Permissions.FREE, Authentication.ANONYMOUS);
     }
 
     /**

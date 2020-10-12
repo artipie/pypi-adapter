@@ -34,7 +34,6 @@ import com.artipie.pypi.PypiContainer;
 import com.artipie.vertx.VertxSliceServer;
 import io.vertx.reactivex.core.Vertx;
 import java.nio.file.Path;
-import java.util.Optional;
 import org.cactoos.list.ListOf;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -200,10 +199,7 @@ public final class PySliceITCase {
     }
 
     private int startServer(final Storage storage) {
-        return this.startServer(
-            storage, Permissions.FREE,
-            (name, pswd) -> Optional.of(new Authentication.User("anonymous"))
-        );
+        return this.startServer(storage, Permissions.FREE, Authentication.ANONYMOUS);
     }
 
 }
