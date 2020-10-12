@@ -29,11 +29,9 @@ import com.artipie.http.Headers;
 import com.artipie.http.Slice;
 import com.artipie.http.auth.Action;
 import com.artipie.http.auth.Authentication;
-import com.artipie.http.auth.BasicIdentities;
-import com.artipie.http.auth.Identities;
+import com.artipie.http.auth.BasicAuthSlice;
 import com.artipie.http.auth.Permission;
 import com.artipie.http.auth.Permissions;
-import com.artipie.http.auth.SliceAuth;
 import com.artipie.http.headers.ContentType;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
@@ -46,6 +44,7 @@ import com.artipie.http.slice.LoggingSlice;
 import com.artipie.http.slice.SliceDownload;
 import com.artipie.http.slice.SliceSimple;
 import com.artipie.http.slice.SliceWithHeaders;
+import java.util.Optional;
 
 /**
  * PyPi HTTP entry point.
@@ -61,17 +60,11 @@ public final class PySlice extends Slice.Wrap {
      * @param storage The storage and default parameters for free access.
      */
     public PySlice(final Storage storage) {
-        this(storage, Permissions.FREE, Identities.ANONYMOUS);
-    }
-
-    /**
-     * Ctor used by Artipie server which knows `Authentication` implementation.
-     * @param storage The storage and default parameters for free access.
-     * @param perms Access permissions.
-     * @param auth Auth details.
-     */
-    public PySlice(final Storage storage, final Permissions perms, final Authentication auth) {
-        this(storage, perms, new BasicIdentities(auth));
+        this(
+            storage,
+            Permissions.FREE,
+            (user, pswd) -> Optional.of(new Authentication.User("anonymous"))
+        );
     }
 
     /**
@@ -80,7 +73,7 @@ public final class PySlice extends Slice.Wrap {
      * @param perms Access permissions.
      * @param auth Concrete identities.
      */
-    public PySlice(final Storage storage, final Permissions perms, final Identities auth) {
+    public PySlice(final Storage storage, final Permissions perms, final Authentication auth) {
         super(
             new SliceRoute(
                 new RtRulePath(
@@ -88,21 +81,21 @@ public final class PySlice extends Slice.Wrap {
                         new ByMethodsRule(RqMethod.GET),
                         new RtRule.ByPath(".*\\.(whl|tar\\.gz|zip|tar\\.bz2|tar\\.Z|tar|egg)")
                     ),
-                    new SliceAuth(
+                    new BasicAuthSlice(
                         new SliceWithHeaders(
                             new LoggingSlice(new SliceDownload(storage)),
                             new Headers.From(new ContentType("application/octet-stream"))
                         ),
-                        new Permission.ByName(perms, Action.Standard.READ),
-                        auth
+                        auth,
+                        new Permission.ByName(perms, Action.Standard.READ)
                     )
                 ),
                 new RtRulePath(
                     new ByMethodsRule(RqMethod.POST),
-                    new SliceAuth(
+                    new BasicAuthSlice(
                         new WheelSlice(storage),
-                        new Permission.ByName(perms, Action.Standard.WRITE),
-                        auth
+                        auth,
+                        new Permission.ByName(perms, Action.Standard.WRITE)
                     )
                 ),
                 new RtRulePath(
@@ -110,20 +103,20 @@ public final class PySlice extends Slice.Wrap {
                         new ByMethodsRule(RqMethod.GET),
                         new RtRule.ByPath("(^\\/)|(.*(\\/[a-z0-9\\-]+?\\/?$))")
                     ),
-                    new SliceAuth(
+                    new BasicAuthSlice(
                         new LoggingSlice(new SliceIndex(storage)),
-                        new Permission.ByName(perms, Action.Standard.READ),
-                        auth
+                        auth,
+                        new Permission.ByName(perms, Action.Standard.READ)
                     )
                 ),
                 new RtRulePath(
                     new RtRule.All(
                         new ByMethodsRule(RqMethod.GET)
                     ),
-                    new SliceAuth(
+                    new BasicAuthSlice(
                         new LoggingSlice(new RedirectSlice()),
-                        new Permission.ByName(perms, Action.Standard.READ),
-                        auth
+                        auth,
+                        new Permission.ByName(perms, Action.Standard.READ)
                     )
                 ),
                 new RtRulePath(
