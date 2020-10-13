@@ -24,7 +24,6 @@
 package com.artipie.pypi.http;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.Key;
 import com.artipie.asto.cache.Cache;
 import com.artipie.asto.cache.CacheControl;
 import com.artipie.http.Headers;
@@ -33,6 +32,8 @@ import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rs.RsWithBody;
+import com.artipie.http.rs.RsWithHeaders;
+import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rs.StandardRs;
 import com.artipie.http.slice.KeyFromPath;
 import io.reactivex.Flowable;
@@ -44,6 +45,7 @@ import org.reactivestreams.Publisher;
 /**
  * Slice that proxies request with given request line and empty headers and body.
  * @since 0.7
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class IndexProxySlice implements Slice {
 
@@ -72,38 +74,37 @@ final class IndexProxySlice implements Slice {
         final String line, final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> pub
     ) {
-        final RequestLineFrom req = new RequestLineFrom(line);
-        final Key key = new KeyFromPath(req.uri().getPath());
-        return new AsyncResponse(
-            this.cache.load(
-                key,
-                () -> {
-                    final CompletableFuture<Content> promise = new CompletableFuture<>();
-                    this.origin.response(line, Headers.EMPTY, Content.EMPTY).send(
-                        (status, rsheaders, rsbody) -> {
-                            final CompletableFuture<Void> term = new CompletableFuture<>();
-                            if (status.success()) {
-                                final Flowable<ByteBuffer> body = Flowable.fromPublisher(rsbody)
-                                    .doOnError(term::completeExceptionally)
-                                    .doOnTerminate(() -> term.complete(null));
-                                promise.complete(new Content.From(body));
-                            } else {
-                                promise.completeExceptionally(
-                                    new IllegalStateException(
-                                        String.format(
-                                            "Unsuccessful response code %s received",
-                                            status.code()
-                                        )
+        final CompletableFuture<Response> res = new CompletableFuture<>();
+        this.cache.load(
+            new KeyFromPath(new RequestLineFrom(line).uri().getPath()),
+            () -> {
+                final CompletableFuture<Content> promise = new CompletableFuture<>();
+                this.origin.response(line, Headers.EMPTY, Content.EMPTY).send(
+                    (status, rsheaders, rsbody) -> {
+                        final CompletableFuture<Void> term = new CompletableFuture<>();
+                        if (status.success()) {
+                            final Flowable<ByteBuffer> body = Flowable.fromPublisher(rsbody)
+                                .doOnError(term::completeExceptionally)
+                                .doOnTerminate(() -> term.complete(null));
+                            promise.complete(new Content.From(body));
+                        } else {
+                            promise.completeExceptionally(
+                                new IllegalStateException(
+                                    String.format(
+                                        "Unsuccessful response code %s received",
+                                        status.code()
                                     )
-                                );
-                            }
-                            return term;
+                                )
+                            );
+                            res.complete(new RsWithHeaders(new RsWithStatus(status), rsheaders));
                         }
-                    );
-                    return promise;
-                },
-                CacheControl.Standard.ALWAYS
-            ).thenApply(content -> new RsWithBody(StandardRs.OK, content))
-        );
+                        return term;
+                    }
+                );
+                return promise;
+            },
+            CacheControl.Standard.ALWAYS
+        ).thenApply(content -> res.complete(new RsWithBody(StandardRs.OK, content)));
+        return new AsyncResponse(res);
     }
 }

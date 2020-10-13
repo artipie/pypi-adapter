@@ -124,15 +124,15 @@ final class PyProxySliceITCase {
     }
 
     @Test
-    void returnsErrorIfRecourseNotFound() throws Exception {
+    void proxiesUnsuccessfulResponseStatus() throws Exception {
         final HttpURLConnection con = (HttpURLConnection) new URL(
             String.format("http://localhost:%s/abc/123/", this.port)
         ).openConnection();
         con.setRequestMethod(RqMethod.GET.value());
         MatcherAssert.assertThat(
-            "Response status is 500",
+            "Response status is 404",
             con.getResponseCode(),
-            new IsEqual<>(Integer.parseInt(RsStatus.INTERNAL_ERROR.code()))
+            new IsEqual<>(Integer.parseInt(RsStatus.NOT_FOUND.code()))
         );
         MatcherAssert.assertThat(
             "Nothing was added to storage",
