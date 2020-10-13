@@ -29,14 +29,11 @@ import com.artipie.asto.fs.FileStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.test.TestResource;
 import com.artipie.http.auth.Authentication;
-import com.artipie.http.auth.BasicIdentities;
-import com.artipie.http.auth.Identities;
 import com.artipie.http.auth.Permissions;
 import com.artipie.pypi.PypiContainer;
 import com.artipie.vertx.VertxSliceServer;
 import io.vertx.reactivex.core.Vertx;
 import java.nio.file.Path;
-import java.util.Optional;
 import org.cactoos.list.ListOf;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -92,8 +89,9 @@ public final class PySliceITCase {
         final String pswd = "opensesame";
         final int port = this.startServer(
             storage,
-            (name, perm) -> user.equals(name) && ("download".equals(perm) || "upload".equals(perm)),
-            this.auth(user, pswd)
+            (identity, perm) -> user.equals(identity.name())
+                && ("download".equals(perm) || "upload".equals(perm)),
+            new Authentication.Single(user, pswd)
         );
         try (PypiContainer runtime = new PypiContainer()) {
             runtime.installTooling();
@@ -132,7 +130,7 @@ public final class PySliceITCase {
     @Test
     void canPublishAndInstallIfNameIsNotNormalized() throws Exception {
         final Storage storage = new InMemoryStorage();
-        final int port = this.startServer(storage, Permissions.FREE, Identities.ANONYMOUS);
+        final int port = this.startServer(storage);
         try (PypiContainer runtime = new PypiContainer()) {
             runtime.installTooling();
             MatcherAssert.assertThat(
@@ -171,7 +169,7 @@ public final class PySliceITCase {
     void canInstallWithVersion(@TempDir final Path temp) throws Exception {
         final FileStorage storage = new FileStorage(temp);
         this.putPackages(storage);
-        final int port = this.startServer(storage, Permissions.FREE, Identities.ANONYMOUS);
+        final int port = this.startServer(storage);
         try (PypiContainer runtime = new PypiContainer()) {
             MatcherAssert.assertThat(
                 runtime.bash(
@@ -187,31 +185,21 @@ public final class PySliceITCase {
         }
     }
 
-    private Identities auth(final String user, final String pswd) {
-        return new BasicIdentities(
-            (name, pass) -> {
-                final Optional<Authentication.User> res;
-                if (user.equals(name) && pswd.equals(pass)) {
-                    res = Optional.of(new Authentication.User(name));
-                } else {
-                    res = Optional.empty();
-                }
-                return res;
-            }
-        );
-    }
-
     private void putPackages(final Storage storage) {
         new TestResource("pypi_repo/alarmtime-0.1.5.tar.gz")
             .saveTo(storage, new Key.From("alarmtime", "alarmtime-0.1.5.tar.gz"));
     }
 
     private int startServer(final Storage storage, final Permissions perms,
-        final Identities auth) {
+        final Authentication auth) {
         this.server = new VertxSliceServer(this.vertx, new PySlice(storage, perms, auth));
         final int port = this.server.start();
         Testcontainers.exposeHostPorts(port);
         return port;
+    }
+
+    private int startServer(final Storage storage) {
+        return this.startServer(storage, Permissions.FREE, Authentication.ANONYMOUS);
     }
 
 }
