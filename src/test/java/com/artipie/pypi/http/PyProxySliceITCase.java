@@ -23,6 +23,10 @@
  */
 package com.artipie.pypi.http;
 
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
+import com.artipie.asto.ext.PublisherAs;
+import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
@@ -68,13 +72,21 @@ final class PyProxySliceITCase {
      */
     private VertxSliceServer server;
 
+    /**
+     * Test storage.
+     */
+    private Storage storage;
+
     @BeforeEach
     void setUp() throws Exception {
         this.client.start();
+        this.storage = new InMemoryStorage();
         this.server = new VertxSliceServer(
             PyProxySliceITCase.VERTX,
             new LoggingSlice(
-                new PyProxySlice(this.client, URI.create("https://pypi.org/simple"))
+                new PyProxySlice(
+                    this.client, URI.create("https://pypi.org/simple"), this.storage
+                )
             )
         );
         this.port = this.server.start();
@@ -82,8 +94,9 @@ final class PyProxySliceITCase {
 
     @Test
     void proxiesIndexRequest() throws Exception {
+        final String key = "a2utils";
         final HttpURLConnection con = (HttpURLConnection) new URL(
-            String.format("http://localhost:%s/a2utils/", this.port)
+            String.format("http://localhost:%s/%s/", this.port, key)
         ).openConnection();
         con.setRequestMethod(RqMethod.GET.value());
         MatcherAssert.assertThat(
@@ -91,29 +104,40 @@ final class PyProxySliceITCase {
             con.getResponseCode(),
             new IsEqual<>(Integer.parseInt(RsStatus.OK.code()))
         );
+        final ListOf<String> expected = new ListOf<>(
+            "<!DOCTYPE html>", "Links for a2utils",
+            "a2utils-0.0.1-py3-none-any.whl", "a2utils-0.0.2-py3-none-any.whl"
+        );
         MatcherAssert.assertThat(
             "Response body is html with packages list",
             new TextOf(con.getInputStream()).asString(),
-            new StringContainsInOrder(
-                new ListOf<String>(
-                    "<!DOCTYPE html>", "Links for a2utils",
-                    "a2utils-0.0.1-py3-none-any.whl", "a2utils-0.0.2-py3-none-any.whl"
-                )
-            )
+            new StringContainsInOrder(expected)
+        );
+        MatcherAssert.assertThat(
+            "Index page was added to storage",
+            new PublisherAs(
+                this.storage.value(new Key.From(key)).join()
+            ).asciiString().toCompletableFuture().join(),
+            new StringContainsInOrder(expected)
         );
         con.disconnect();
     }
 
     @Test
-    void proxiesNotFoundRequest() throws Exception {
+    void returnsErrorIfRecourseNotFound() throws Exception {
         final HttpURLConnection con = (HttpURLConnection) new URL(
             String.format("http://localhost:%s/abc/123/", this.port)
         ).openConnection();
         con.setRequestMethod(RqMethod.GET.value());
         MatcherAssert.assertThat(
-            "Response status is 404",
+            "Response status is 500",
             con.getResponseCode(),
-            new IsEqual<>(Integer.parseInt(RsStatus.NOT_FOUND.code()))
+            new IsEqual<>(Integer.parseInt(RsStatus.INTERNAL_ERROR.code()))
+        );
+        MatcherAssert.assertThat(
+            "Nothing was added to storage",
+            this.storage.list(Key.ROOT).join().isEmpty(),
+            new IsEqual<>(true)
         );
         con.disconnect();
     }

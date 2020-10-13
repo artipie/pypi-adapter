@@ -23,10 +23,8 @@
  */
 package com.artipie.pypi.http;
 
-import com.artipie.asto.Content;
-import com.artipie.asto.cache.Cache;
-import com.artipie.http.Headers;
-import com.artipie.http.Response;
+import com.artipie.asto.Storage;
+import com.artipie.asto.cache.FromRemoteCache;
 import com.artipie.http.Slice;
 import com.artipie.http.client.ClientSlices;
 import com.artipie.http.client.UriClientSlice;
@@ -41,9 +39,6 @@ import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
 import com.artipie.http.slice.SliceSimple;
 import java.net.URI;
-import java.nio.ByteBuffer;
-import java.util.Map;
-import org.reactivestreams.Publisher;
 
 /**
  * Python proxy slice.
@@ -56,9 +51,10 @@ public final class PyProxySlice extends Slice.Wrap {
      * New maven proxy without cache.
      * @param clients HTTP clients
      * @param remote Remote URI
+     * @param storage Cache storage
      */
-    public PyProxySlice(final ClientSlices clients, final URI remote) {
-        this(clients, remote, Authenticator.ANONYMOUS, Cache.NOP);
+    public PyProxySlice(final ClientSlices clients, final URI remote, final Storage storage) {
+        this(clients, remote, Authenticator.ANONYMOUS, storage);
     }
 
     /**
@@ -66,7 +62,7 @@ public final class PyProxySlice extends Slice.Wrap {
      * @param clients Http clients
      * @param remote Remote URI
      * @param auth Authenticator
-     * @param cache Repository cache
+     * @param cache Repository cache storage
      * @checkstyle ParameterNumberCheck (500 lines)
      */
     @SuppressWarnings("PMD.UnusedFormalParameter")
@@ -74,7 +70,7 @@ public final class PyProxySlice extends Slice.Wrap {
         final ClientSlices clients,
         final URI remote,
         final Authenticator auth,
-        final Cache cache
+        final Storage cache
     ) {
         super(
             new SliceRoute(
@@ -83,7 +79,10 @@ public final class PyProxySlice extends Slice.Wrap {
                         new ByMethodsRule(RqMethod.GET),
                         new RtRule.ByPath("(^\\/)|(.*(\\/[a-z0-9\\-]+?\\/?$))")
                     ),
-                    new RqLine(new AuthClientSlice(new UriClientSlice(clients, remote), auth))
+                    new IndexProxySlice(
+                        new AuthClientSlice(new UriClientSlice(clients, remote), auth),
+                        new FromRemoteCache(cache)
+                    )
                 ),
                 new RtRulePath(
                     RtRule.FALLBACK,
@@ -93,31 +92,4 @@ public final class PyProxySlice extends Slice.Wrap {
         );
     }
 
-    /**
-     * Slice that proxies request with given request line and empty headers and body.
-     * @since 0.7
-     */
-    private static final class RqLine implements Slice {
-
-        /**
-         * Origin.
-         */
-        private final Slice origin;
-
-        /**
-         * Ctor.
-         * @param origin Origin
-         */
-        RqLine(final Slice origin) {
-            this.origin = origin;
-        }
-
-        @Override
-        public Response response(
-            final String line, final Iterable<Map.Entry<String, String>> headers,
-            final Publisher<ByteBuffer> body
-        ) {
-            return this.origin.response(line, Headers.EMPTY, Content.EMPTY);
-        }
-    }
 }
