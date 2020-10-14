@@ -40,6 +40,7 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import org.reactivestreams.Publisher;
 
 /**
@@ -74,37 +75,50 @@ final class IndexProxySlice implements Slice {
         final String line, final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> pub
     ) {
-        final CompletableFuture<Response> res = new CompletableFuture<>();
-        this.cache.load(
-            new KeyFromPath(new RequestLineFrom(line).uri().getPath()),
-            () -> {
-                final CompletableFuture<Content> promise = new CompletableFuture<>();
-                this.origin.response(line, Headers.EMPTY, Content.EMPTY).send(
-                    (status, rsheaders, rsbody) -> {
-                        final CompletableFuture<Void> term = new CompletableFuture<>();
-                        if (status.success()) {
-                            final Flowable<ByteBuffer> body = Flowable.fromPublisher(rsbody)
-                                .doOnError(term::completeExceptionally)
-                                .doOnTerminate(() -> term.complete(null));
-                            promise.complete(new Content.From(body));
-                        } else {
-                            promise.completeExceptionally(
-                                new IllegalStateException(
-                                    String.format(
-                                        "Unsuccessful response code %s received",
-                                        status.code()
+        final CompletableFuture<Response> failed = new CompletableFuture<>();
+        return new AsyncResponse(
+            this.cache.load(
+                new KeyFromPath(new RequestLineFrom(line).uri().getPath()),
+                () -> {
+                    final CompletableFuture<Content> promise = new CompletableFuture<>();
+                    this.origin.response(line, Headers.EMPTY, Content.EMPTY).send(
+                        (status, rsheaders, rsbody) -> {
+                            final CompletableFuture<Void> term = new CompletableFuture<>();
+                            if (status.success()) {
+                                final Flowable<ByteBuffer> body = Flowable.fromPublisher(rsbody)
+                                    .doOnError(term::completeExceptionally)
+                                    .doOnTerminate(() -> term.complete(null));
+                                promise.complete(new Content.From(body));
+                            } else {
+                                promise.completeExceptionally(
+                                    new IllegalStateException(
+                                        String.format(
+                                            "Unsuccessful response code %s received",
+                                            status.code()
+                                        )
                                     )
-                                )
-                            );
-                            res.complete(new RsWithHeaders(new RsWithStatus(status), rsheaders));
+                                );
+                                failed.complete(
+                                    new RsWithHeaders(new RsWithStatus(status), rsheaders)
+                                );
+                            }
+                            return term;
                         }
-                        return term;
+                    );
+                    return promise;
+                },
+                CacheControl.Standard.ALWAYS
+            ).handle(
+                (content, throwable) -> {
+                    CompletableFuture<Response> result = new CompletableFuture<>();
+                    if (throwable == null) {
+                        result.complete(new RsWithBody(StandardRs.OK, content));
+                    } else {
+                        result = failed;
                     }
-                );
-                return promise;
-            },
-            CacheControl.Standard.ALWAYS
-        ).thenApply(content -> res.complete(new RsWithBody(StandardRs.OK, content)));
-        return new AsyncResponse(res);
+                    return result;
+                }
+            ).thenCompose(Function.identity())
+        );
     }
 }
