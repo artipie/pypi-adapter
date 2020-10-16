@@ -26,7 +26,7 @@ SOFTWARE.
   <parent>
     <groupId>com.artipie</groupId>
     <artifactId>ppom</artifactId>
-    <version>0.4</version>
+    <version>0.4.1</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>pypi-adapter</artifactId>
@@ -115,12 +115,17 @@ SOFTWARE.
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <scope>test</scope>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.8.0-alpha2</version>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
-      <scope>test</scope>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
