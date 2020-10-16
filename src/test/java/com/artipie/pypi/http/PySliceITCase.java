@@ -125,7 +125,6 @@ public final class PySliceITCase {
                 ),
                 new StringContains("Successfully installed alarmtime-0.1.5")
             );
-            runtime.stop();
         }
     }
 
@@ -163,7 +162,6 @@ public final class PySliceITCase {
                 ),
                 new StringContains("Successfully installed ABtests-0.0.2.1")
             );
-            runtime.stop();
         }
     }
 
@@ -183,7 +181,6 @@ public final class PySliceITCase {
                 ),
                 Matchers.containsString("Successfully installed alarmtime-0.1.5")
             );
-            runtime.stop();
         }
     }
 
@@ -204,7 +201,6 @@ public final class PySliceITCase {
                 ),
                 Matchers.stringContainsInOrder("alarmtime", "0.1.5")
             );
-            runtime.stop();
         }
     }
 
