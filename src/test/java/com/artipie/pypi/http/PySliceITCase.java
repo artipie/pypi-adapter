@@ -30,6 +30,7 @@ import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.test.TestResource;
 import com.artipie.http.auth.Authentication;
 import com.artipie.http.auth.Permissions;
+import com.artipie.http.slice.LoggingSlice;
 import com.artipie.pypi.PypiContainer;
 import com.artipie.vertx.VertxSliceServer;
 import io.vertx.reactivex.core.Vertx;
@@ -42,6 +43,7 @@ import org.hamcrest.core.StringContains;
 import org.hamcrest.text.StringContainsInOrder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
@@ -185,6 +187,27 @@ public final class PySliceITCase {
         }
     }
 
+    @Test
+    @Disabled
+    void canSearch(@TempDir final Path temp) throws Exception {
+        final FileStorage storage = new FileStorage(temp);
+        this.putPackages(storage);
+        final int port = this.startServer(storage);
+        try (PypiContainer runtime = new PypiContainer()) {
+            MatcherAssert.assertThat(
+                runtime.bash(
+                    String.format(
+                        // @checkstyle LineLengthCheck (1 line)
+                        "pip search alarmtime --index %s",
+                        runtime.localAddress(port)
+                    )
+                ),
+                Matchers.stringContainsInOrder("alarmtime", "0.1.5")
+            );
+            runtime.stop();
+        }
+    }
+
     private void putPackages(final Storage storage) {
         new TestResource("pypi_repo/alarmtime-0.1.5.tar.gz")
             .saveTo(storage, new Key.From("alarmtime", "alarmtime-0.1.5.tar.gz"));
@@ -192,7 +215,10 @@ public final class PySliceITCase {
 
     private int startServer(final Storage storage, final Permissions perms,
         final Authentication auth) {
-        this.server = new VertxSliceServer(this.vertx, new PySlice(storage, perms, auth));
+        this.server = new VertxSliceServer(
+            this.vertx,
+            new LoggingSlice(new PySlice(storage, perms, auth))
+        );
         final int port = this.server.start();
         Testcontainers.exposeHostPorts(port);
         return port;
