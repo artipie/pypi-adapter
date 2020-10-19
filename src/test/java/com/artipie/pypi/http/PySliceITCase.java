@@ -186,8 +186,8 @@ public final class PySliceITCase {
 
     @Test
     @Disabled
-    void canSearch(@TempDir final Path temp) throws Exception {
-        final FileStorage storage = new FileStorage(temp);
+    void canSearch() throws Exception {
+        final Storage storage = new InMemoryStorage();
         this.putPackages(storage);
         final int port = this.startServer(storage);
         try (PypiContainer runtime = new PypiContainer()) {
