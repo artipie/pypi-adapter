@@ -44,6 +44,12 @@ public interface PackageInfo {
     String version();
 
     /**
+     * A one-line summary of what the package does.
+     * @return Summary
+     */
+    String summary();
+
+    /**
      * Implementation of {@link PackageInfo} that parses python metadata PKG-INFO file to obtain
      * required information. For more details see
      * <a href="https://www.python.org/dev/peps/pep-0314/">PEP-314</a>.
@@ -72,6 +78,11 @@ public interface PackageInfo {
         @Override
         public String version() {
             return this.read("Version");
+        }
+
+        @Override
+        public String summary() {
+            return this.read("Summary");
         }
 
         /**
