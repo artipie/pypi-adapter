@@ -40,7 +40,6 @@ import com.artipie.http.rt.ByMethodsRule;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
-import com.artipie.http.slice.LoggingSlice;
 import com.artipie.http.slice.SliceDownload;
 import com.artipie.http.slice.SliceSimple;
 import com.artipie.http.slice.SliceWithHeaders;
@@ -78,7 +77,7 @@ public final class PySlice extends Slice.Wrap {
                     ),
                     new BasicAuthSlice(
                         new SliceWithHeaders(
-                            new LoggingSlice(new SliceDownload(storage)),
+                            new SliceDownload(storage),
                             new Headers.From(new ContentType("application/octet-stream"))
                         ),
                         auth,
@@ -88,7 +87,7 @@ public final class PySlice extends Slice.Wrap {
                 new RtRulePath(
                     new ByMethodsRule(RqMethod.POST),
                     new BasicAuthSlice(
-                        new LoggingSlice(new WheelSlice(storage)),
+                        new WheelSlice(storage),
                         auth,
                         new Permission.ByName(perms, Action.Standard.WRITE)
                     )
@@ -99,7 +98,7 @@ public final class PySlice extends Slice.Wrap {
                         new RtRule.ByPath("(^\\/)|(.*(\\/[a-z0-9\\-]+?\\/?$))")
                     ),
                     new BasicAuthSlice(
-                        new LoggingSlice(new SliceIndex(storage)),
+                        new SliceIndex(storage),
                         auth,
                         new Permission.ByName(perms, Action.Standard.READ)
                     )
@@ -109,7 +108,7 @@ public final class PySlice extends Slice.Wrap {
                         new ByMethodsRule(RqMethod.GET)
                     ),
                     new BasicAuthSlice(
-                        new LoggingSlice(new RedirectSlice()),
+                        new RedirectSlice(),
                         auth,
                         new Permission.ByName(perms, Action.Standard.READ)
                     )
