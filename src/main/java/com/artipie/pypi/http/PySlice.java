@@ -86,22 +86,9 @@ public final class PySlice extends Slice.Wrap {
                     )
                 ),
                 new RtRulePath(
-                    new RtRule.All(
-                        new ByMethodsRule(RqMethod.POST),
-                        new RtRule.ByPath(".*\\.(whl|tar\\.gz|zip|tar\\.bz2|tar\\.Z|tar|egg)")
-                    ),
+                    new ByMethodsRule(RqMethod.POST),
                     new BasicAuthSlice(
                         new LoggingSlice(new WheelSlice(storage)),
-                        auth,
-                        new Permission.ByName(perms, Action.Standard.WRITE)
-                    )
-                ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new ByMethodsRule(RqMethod.POST)
-                    ),
-                    new BasicAuthSlice(
-                        new LoggingSlice(new SearchSlice(storage)),
                         auth,
                         new Permission.ByName(perms, Action.Standard.WRITE)
                     )
