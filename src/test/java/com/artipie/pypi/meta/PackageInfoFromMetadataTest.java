@@ -40,16 +40,17 @@ class PackageInfoFromMetadataTest {
 
     @ParameterizedTest
     @CsvSource({
-        "my-project,0.3",
-        "Another project,123-93",
-        "Very-very-difficult project,3"
+        "my-project,0.3,Sample python project",
+        "Another project,123-93,Another example project",
+        "Very-very-difficult project,3,Calculates probability of the Earth being flat"
     })
-    void readsMetadata(final String name, final String version) {
+    void readsMetadata(final String name, final String version, final String summary) {
         MatcherAssert.assertThat(
-            new PackageInfo.FromMetadata(this.metadata(name, version)),
+            new PackageInfo.FromMetadata(this.metadata(name, version, summary)),
             Matchers.allOf(
                 new MatcherOf<>(info -> { return version.equals(info.version()); }),
-                new MatcherOf<>(info -> { return name.equals(info.name()); })
+                new MatcherOf<>(info -> { return name.equals(info.name()); }),
+                new MatcherOf<>(info -> { return summary.equals(info.summary()); })
             )
         );
     }
@@ -70,13 +71,21 @@ class PackageInfoFromMetadataTest {
         );
     }
 
-    private String metadata(final String name, final String version) {
+    @Test
+    void throwsExceptionIfSummaryNotFound() {
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> new PackageInfo.FromMetadata("some meta").version()
+        );
+    }
+
+    private String metadata(final String name, final String version, final String summary) {
         return String.join(
             "\n",
             "Metadata-Version: 2.1",
             String.format("Name: %s", name),
             String.format("Version: %s", version),
-            "Summary: A sample Python project",
+            String.format("Summary: %s", summary),
             "Author: Someone",
             "Author-email: someone@example.com"
         );
