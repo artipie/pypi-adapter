@@ -137,7 +137,7 @@ class PySliceTest {
     void returnsBadRequestOnEmptyPost() {
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine("POST", "/sample").toString(),
+                new RequestLine("POST", "/sample.tar").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
             ),

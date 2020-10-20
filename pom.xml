@@ -70,7 +70,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>http</artifactId>
-      <version>0.16.4</version>
+      <version>0.16.5</version>
     </dependency>
     <dependency>
       <groupId>com.artipie</groupId>
@@ -86,6 +86,11 @@ SOFTWARE.
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
       <version>1.20</version>
+    </dependency>
+    <dependency>
+      <groupId>com.jcabi</groupId>
+      <artifactId>jcabi-xml</artifactId>
+      <version>0.22.2</version>
     </dependency>
     <!-- Test -->
     <dependency>
