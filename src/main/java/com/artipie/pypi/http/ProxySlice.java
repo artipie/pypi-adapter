@@ -30,25 +30,30 @@ import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
+import com.artipie.http.headers.Header;
 import com.artipie.http.rq.RequestLineFrom;
-import com.artipie.http.rs.RsWithBody;
+import com.artipie.http.rs.RsFull;
+import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
-import com.artipie.http.rs.StandardRs;
 import com.artipie.http.slice.KeyFromPath;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.StreamSupport;
 import org.reactivestreams.Publisher;
 
 /**
- * Slice that proxies request with given request line and empty headers and body.
+ * Slice that proxies request with given request line and empty headers and body,
+ * caches and returns response from remote.
  * @since 0.7
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-final class IndexProxySlice implements Slice {
+final class ProxySlice implements Slice {
 
     /**
      * Origin.
@@ -65,26 +70,29 @@ final class IndexProxySlice implements Slice {
      * @param origin Origin
      * @param cache Cache
      */
-    IndexProxySlice(final Slice origin, final Cache cache) {
+    ProxySlice(final Slice origin, final Cache cache) {
         this.origin = origin;
         this.cache = cache;
     }
 
     @Override
     public Response response(
-        final String line, final Iterable<Map.Entry<String, String>> headers,
+        final String line, final Iterable<Map.Entry<String, String>> ignored,
         final Publisher<ByteBuffer> pub
     ) {
-        final CompletableFuture<Response> failed = new CompletableFuture<>();
+        final AtomicReference<Headers> headers = new AtomicReference<>();
+        final AtomicReference<RsStatus> status = new AtomicReference<>();
         return new AsyncResponse(
             this.cache.load(
                 new KeyFromPath(new RequestLineFrom(line).uri().getPath()),
                 () -> {
                     final CompletableFuture<Content> promise = new CompletableFuture<>();
                     this.origin.response(line, Headers.EMPTY, Content.EMPTY).send(
-                        (status, rsheaders, rsbody) -> {
+                        (rsstatus, rsheaders, rsbody) -> {
                             final CompletableFuture<Void> term = new CompletableFuture<>();
-                            if (status.success()) {
+                            headers.set(rsheaders);
+                            status.set(rsstatus);
+                            if (rsstatus.success()) {
                                 final Flowable<ByteBuffer> body = Flowable.fromPublisher(rsbody)
                                     .doOnError(term::completeExceptionally)
                                     .doOnTerminate(() -> term.complete(null));
@@ -94,12 +102,9 @@ final class IndexProxySlice implements Slice {
                                     new IllegalStateException(
                                         String.format(
                                             "Unsuccessful response code %s received",
-                                            status.code()
+                                            rsstatus.code()
                                         )
                                     )
-                                );
-                                failed.complete(
-                                    new RsWithHeaders(new RsWithStatus(status), rsheaders)
                                 );
                             }
                             return term;
@@ -110,15 +115,35 @@ final class IndexProxySlice implements Slice {
                 CacheControl.Standard.ALWAYS
             ).handle(
                 (content, throwable) -> {
-                    CompletableFuture<Response> result = new CompletableFuture<>();
+                    final CompletableFuture<Response> result = new CompletableFuture<>();
                     if (throwable == null) {
-                        result.complete(new RsWithBody(StandardRs.OK, content));
+                        result.complete(
+                            new RsFull(
+                                RsStatus.OK,
+                                ProxySlice.contentType(headers.get())
+                                    .<Headers>map(Headers.From::new).orElse(Headers.EMPTY),
+                                content
+                            )
+                        );
                     } else {
-                        result = failed;
+                        result.complete(
+                            new RsWithHeaders(new RsWithStatus(status.get()), headers.get())
+                        );
                     }
                     return result;
                 }
             ).thenCompose(Function.identity())
         );
+    }
+
+    /**
+     * Obtains content-type header.
+     * @param headers Header
+     * @return Cleaned up headers.
+     */
+    private static Optional<Header> contentType(final Headers headers) {
+        return StreamSupport.stream(headers.spliterator(), false)
+            .filter(header -> header.getKey().equalsIgnoreCase("content-type"))
+            .findFirst().map(Header::new);
     }
 }

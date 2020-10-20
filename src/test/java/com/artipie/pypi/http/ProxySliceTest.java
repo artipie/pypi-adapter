@@ -46,12 +46,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test for {@link IndexProxySlice}.
+ * Test for {@link ProxySlice}.
  * @since 0.7
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-class IndexProxySliceTest {
+class ProxySliceTest {
 
     /**
      * Test storage.
@@ -69,7 +69,7 @@ class IndexProxySliceTest {
         final String key = "index";
         MatcherAssert.assertThat(
             "Returns body from remote",
-            new IndexProxySlice(
+            new ProxySlice(
                 new SliceSimple(new RsWithBody(StandardRs.OK, new Content.From(body))),
                 new FromRemoteCache(this.storage)
             ),
@@ -87,12 +87,12 @@ class IndexProxySliceTest {
 
     @Test
     void getsFromCacheOnError() {
-        final byte[] body = "my project index".getBytes();
+        final byte[] body = "my project package".getBytes();
         final String key = "my_project";
         this.storage.save(new Key.From(key), new Content.From(body)).join();
         MatcherAssert.assertThat(
             "Returns body from cache",
-            new IndexProxySlice(
+            new ProxySlice(
                 new SliceSimple(new RsWithStatus(RsStatus.INTERNAL_ERROR)),
                 new FromRemoteCache(this.storage)
             ),
@@ -113,7 +113,7 @@ class IndexProxySliceTest {
         final RsStatus status = RsStatus.BAD_REQUEST;
         MatcherAssert.assertThat(
             "Status 400 returned",
-            new IndexProxySlice(
+            new ProxySlice(
                 new SliceSimple(new RsWithStatus(status)),
                 new FromRemoteCache(this.storage)
             ),

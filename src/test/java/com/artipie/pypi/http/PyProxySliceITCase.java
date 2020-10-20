@@ -31,19 +31,23 @@ import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.slice.LoggingSlice;
+import com.artipie.pypi.PypiContainer;
 import com.artipie.vertx.VertxSliceServer;
 import io.vertx.reactivex.core.Vertx;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import org.cactoos.list.ListOf;
 import org.cactoos.text.TextOf;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.text.StringContainsInOrder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.Testcontainers;
 
 /**
  * Test for {@link PyProxySlice}.
@@ -90,6 +94,28 @@ final class PyProxySliceITCase {
             )
         );
         this.port = this.server.start();
+    }
+
+    @Test
+    void installsFromProxy() throws IOException, InterruptedException {
+        Testcontainers.exposeHostPorts(this.port);
+        try (PypiContainer runtime = new PypiContainer()) {
+            MatcherAssert.assertThat(
+                runtime.bash(
+                    String.format(
+                        // @checkstyle LineLengthCheck (1 line)
+                        "pip install --index-url %s --verbose --no-deps --trusted-host host.testcontainers.internal \"alarmtime\"",
+                        runtime.localAddress(this.port)
+                    )
+                ),
+                Matchers.containsString("Successfully installed alarmtime-0.1.4")
+            );
+            MatcherAssert.assertThat(
+                "Requested items cached",
+                this.storage.list(new Key.From("alarmtime")).join().isEmpty(),
+                new IsEqual<>(false)
+            );
+        }
     }
 
     @Test
