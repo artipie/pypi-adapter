@@ -47,6 +47,8 @@ import org.hamcrest.text.StringContainsInOrder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.testcontainers.Testcontainers;
 
 /**
@@ -97,6 +99,7 @@ final class PyProxySliceITCase {
     }
 
     @Test
+    @EnabledOnOs({OS.LINUX, OS.MAC})
     void installsFromProxy() throws IOException, InterruptedException {
         Testcontainers.exposeHostPorts(this.port);
         try (PypiContainer runtime = new PypiContainer()) {
