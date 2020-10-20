@@ -75,11 +75,8 @@ public final class PyProxySlice extends Slice.Wrap {
         super(
             new SliceRoute(
                 new RtRulePath(
-                    new RtRule.All(
-                        new ByMethodsRule(RqMethod.GET),
-                        new RtRule.ByPath("(^\\/)|(.*(\\/[a-z0-9\\-]+?\\/?$))")
-                    ),
-                    new IndexProxySlice(
+                    new ByMethodsRule(RqMethod.GET),
+                    new ProxySlice(
                         new AuthClientSlice(new UriClientSlice(clients, remote), auth),
                         new FromRemoteCache(cache)
                     )
