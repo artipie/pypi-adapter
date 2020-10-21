@@ -40,7 +40,6 @@ import com.artipie.http.slice.KeyFromPath;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -120,8 +119,7 @@ final class ProxySlice implements Slice {
                         result.complete(
                             new RsFull(
                                 RsStatus.OK,
-                                ProxySlice.contentType(headers.get())
-                                    .<Headers>map(Headers.From::new).orElse(Headers.EMPTY),
+                                new Headers.From(ProxySlice.contentType(headers.get(), line)),
                                 content
                             )
                         );
@@ -137,13 +135,24 @@ final class ProxySlice implements Slice {
     }
 
     /**
-     * Obtains content-type header.
+     * Obtains content-type from remote's headers or trays to guess it by request line.
      * @param headers Header
+     * @param line Request line
      * @return Cleaned up headers.
      */
-    private static Optional<Header> contentType(final Headers headers) {
+    private static Header contentType(final Headers headers, final String line) {
+        final String name = "content-type";
         return StreamSupport.stream(headers.spliterator(), false)
-            .filter(header -> header.getKey().equalsIgnoreCase("content-type"))
-            .findFirst().map(Header::new);
+            .filter(header -> header.getKey().equalsIgnoreCase(name))
+            .findFirst().map(Header::new).orElseGet(
+                () -> {
+                    Header res = new Header(name, "text/html");
+                    if (new RequestLineFrom(line).uri().toString()
+                        .matches(".*\\.(whl|tar\\.gz|zip|tar\\.bz2|tar\\.Z|tar|egg)")) {
+                        res = new Header(name, "multipart/form-data");
+                    }
+                    return res;
+                }
+            );
     }
 }
