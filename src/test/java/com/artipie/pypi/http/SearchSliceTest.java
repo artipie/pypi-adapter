@@ -61,7 +61,6 @@ class SearchSliceTest {
 
     @Test
     void returnsEmptyXmlWhenArtifactNotFound() {
-        this.storage.save(new Key.From("some_project.whl"), Content.EMPTY);
         MatcherAssert.assertThat(
             new SearchSlice(this.storage),
             new SliceHasResponse(
