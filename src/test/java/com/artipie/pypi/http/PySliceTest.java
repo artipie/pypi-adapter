@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.http.Headers;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.IsHeader;
 import com.artipie.http.hm.IsString;
@@ -138,7 +139,7 @@ class PySliceTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine("POST", "/sample.tar").toString(),
-                Collections.emptyList(),
+                new Headers.From("content-type", "multipart/form-data"),
                 Flowable.empty()
             ),
             new RsHasStatus(RsStatus.BAD_REQUEST)
