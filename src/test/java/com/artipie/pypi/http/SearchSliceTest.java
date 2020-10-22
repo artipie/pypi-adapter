@@ -24,8 +24,10 @@
 package com.artipie.pypi.http;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.asto.test.TestResource;
 import com.artipie.http.Headers;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.RsHasBody;
@@ -35,6 +37,7 @@ import com.artipie.http.hm.SliceHasResponse;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
+import com.artipie.pypi.meta.PackageInfo;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,6 +78,25 @@ class SearchSliceTest {
         );
     }
 
+    @Test
+    void returnsXmlWithInfoWhenArtifactFound() {
+        new TestResource("pypi_repo/alarmtime-0.1.5.tar.gz")
+            .saveTo(this.storage, new Key.From("alarmtime", "alarmtime-0.1.5.tar.gz"));
+        MatcherAssert.assertThat(
+            new SearchSlice(this.storage),
+            new SliceHasResponse(
+                Matchers.allOf(
+                    new RsHasStatus(RsStatus.OK),
+                    new RsHasHeaders(new Header("content-type", "text/xml")),
+                    new RsHasBody(SearchSlice.found(new PackageInfo.FromMetadata(this.metadata())))
+                ),
+                new RequestLine(RqMethod.POST, "/"),
+                Headers.EMPTY,
+                new Content.From(this.xml("alarmtime").getBytes())
+            )
+        );
+    }
+
     private String xml(final String name) {
         return String.join(
             "\n", "<?xml version='1.0'?>",
@@ -102,6 +124,19 @@ class SearchSliceTest {
             "</param>",
             "</params>",
             "</methodCall>"
+        );
+    }
+
+    private String metadata() {
+        // @checkstyle LineLengthCheck (10 line)
+        return String.join(
+            "\n",
+            "Metadata-Version: 2.1",
+            "Name: AlarmTime",
+            "Version: 0.1.5",
+            "Summary: For calculating time difference from current time to Target time and can detect a time from our natural language",
+            "Author: Someone",
+            "Author-email: someone@example.com"
         );
     }
 }

@@ -24,24 +24,33 @@
 package com.artipie.pypi.http;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.Copy;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.PublisherAs;
+import com.artipie.asto.fs.FileStorage;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
-import com.artipie.http.rs.StandardRs;
+import com.artipie.http.rs.RsWithStatus;
 import com.artipie.pypi.NormalizedProjectName;
+import com.artipie.pypi.meta.Metadata;
 import com.artipie.pypi.meta.PackageInfo;
 import com.jcabi.xml.XMLDocument;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import org.apache.commons.io.FileUtils;
+import org.cactoos.list.ListOf;
+import org.cactoos.scalar.Unchecked;
 import org.reactivestreams.Publisher;
 
 /**
@@ -68,31 +77,43 @@ public final class SearchSlice implements Slice {
     @Override
     public Response response(final String line, final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> body) {
+        final Path temp = new Unchecked<>(() -> Files.createTempDirectory("py-artifact-")).value();
         return new AsyncResponse(
             new NameFromXml(body).get().thenCompose(
                 name -> {
                     final Key.From key = new Key.From(
                         new NormalizedProjectName.Simple(name).value()
                     );
-                    return this.storage.exists(
-                        key
-                    ).thenCompose(
-                        exists -> {
-                            final CompletableFuture<Response> res = new CompletableFuture<>();
-                            if (exists) {
-                                res.complete(StandardRs.OK);
+                    return this.storage.list(key).thenCompose(
+                        list -> {
+                            CompletableFuture<Content> res = new CompletableFuture<>();
+                            if (list.isEmpty()) {
+                                res.complete(new Content.From(SearchSlice.empty()));
                             } else {
-                                res.complete(
-                                    new RsFull(
-                                        RsStatus.OK,
-                                        new Headers.From("content-type", "text/xml"),
-                                        new Content.From(SearchSlice.empty())
-                                    )
-                                );
+                                final Key latest = list.stream().map(Key::string)
+                                    .max(Comparator.naturalOrder())
+                                    .map(Key.From::new)
+                                    .orElseThrow(IllegalStateException::new);
+                                res = this.tempArtifact(new Key.From(latest), temp)
+                                    .thenApply(path -> new Metadata.FromArchive(path).read())
+                                    .thenApply(info -> new Content.From(SearchSlice.found(info)));
                             }
                             return res;
                         }
                     );
+                }
+            ).handle(
+                (content, throwable) -> {
+                    final Response res;
+                    if (throwable == null) {
+                        res = new RsFull(
+                            RsStatus.OK, new Headers.From("content-type", "text/xml"), content
+                        );
+                    } else {
+                        res = new RsWithStatus(RsStatus.INTERNAL_ERROR);
+                    }
+                    FileUtils.deleteQuietly(temp.toFile());
+                    return res;
                 }
             )
         );
@@ -120,7 +141,7 @@ public final class SearchSlice implements Slice {
      * @param info Package info
      * @return Xml string
      */
-    private static String found(final PackageInfo info) {
+    static byte[] found(final PackageInfo info) {
         return String.join(
             "\n",
             "<?xml version='1.0'?>",
@@ -150,7 +171,18 @@ public final class SearchSlice implements Slice {
             "</param>",
             "</params>",
             "</methodResponse>"
-        );
+        ).getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Copy artifact to the temp storage.
+     * @param artifact Artifact key to copy
+     * @param temp Temp dir
+     * @return Path of the temp file
+     */
+    private CompletableFuture<Path> tempArtifact(final Key artifact, final Path temp) {
+        return new Copy(this.storage, new ListOf<>(artifact)).copy(new FileStorage(temp))
+            .thenApply(nothing -> temp.resolve(artifact.string()));
     }
 
     /**
