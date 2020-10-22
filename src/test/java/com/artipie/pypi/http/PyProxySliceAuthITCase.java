@@ -41,6 +41,8 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.testcontainers.Testcontainers;
 
 /**
@@ -48,6 +50,7 @@ import org.testcontainers.Testcontainers;
  * @since 0.7
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@EnabledOnOs({OS.LINUX, OS.MAC})
 class PyProxySliceAuthITCase {
 
     /**
