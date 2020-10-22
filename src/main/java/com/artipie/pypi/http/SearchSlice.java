@@ -23,23 +23,33 @@
  */
 package com.artipie.pypi.http;
 
+import com.artipie.asto.Content;
+import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.PublisherAs;
+import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
+import com.artipie.http.async.AsyncResponse;
+import com.artipie.http.rs.RsFull;
+import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.StandardRs;
+import com.artipie.pypi.NormalizedProjectName;
+import com.artipie.pypi.meta.PackageInfo;
 import com.jcabi.xml.XMLDocument;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.reactivestreams.Publisher;
 
 /**
  * Search slice.
  * @since 0.7
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
+@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.UnusedPrivateMethod"})
 public final class SearchSlice implements Slice {
 
     /**
@@ -58,7 +68,89 @@ public final class SearchSlice implements Slice {
     @Override
     public Response response(final String line, final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> body) {
-        return StandardRs.EMPTY;
+        return new AsyncResponse(
+            new NameFromXml(body).get().thenCompose(
+                name -> {
+                    final Key.From key = new Key.From(
+                        new NormalizedProjectName.Simple(name).value()
+                    );
+                    return this.storage.exists(
+                        key
+                    ).thenCompose(
+                        exists -> {
+                            final CompletableFuture<Response> res = new CompletableFuture<>();
+                            if (exists) {
+                                res.complete(StandardRs.OK);
+                            } else {
+                                res.complete(
+                                    new RsFull(
+                                        RsStatus.OK,
+                                        new Headers.From("content-type", "text/xml"),
+                                        new Content.From(SearchSlice.empty())
+                                    )
+                                );
+                            }
+                            return res;
+                        }
+                    );
+                }
+            )
+        );
+    }
+
+    /**
+     * Response body when no packages found by given name.
+     * @return Xml string
+     */
+    static byte[] empty() {
+        return String.join(
+            "\n", "<methodResponse>",
+            "<params>",
+            "<param>",
+            "<value><array><data>",
+            "</data></array></value>",
+            "</param>",
+            "</params>",
+            "</methodResponse>"
+        ).getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Response body xml for search result.
+     * @param info Package info
+     * @return Xml string
+     */
+    private static String found(final PackageInfo info) {
+        return String.join(
+            "\n",
+            "<?xml version='1.0'?>",
+            "<methodResponse>",
+            "<params>",
+            "<param>",
+            "<value><array><data>",
+            "<value><struct>",
+            "<member>",
+            "<name>name</name>",
+            String.format("<value><string>%s</string></value>", info.name()),
+            "</member>",
+            "<member>",
+            "<name>summary</name>",
+            String.format("<value><string>%s</string></value>", info.summary()),
+            "</member>",
+            "<member>",
+            "<name>version</name>",
+            String.format("<value><string>%s</string></value>", info.version()),
+            "</member>",
+            "<member>",
+            "<name>_pypi_ordering</name>",
+            "<value><boolean>0</boolean></value>",
+            "</member>",
+            "</struct></value>",
+            "</data></array></value>",
+            "</param>",
+            "</params>",
+            "</methodResponse>"
+        );
     }
 
     /**

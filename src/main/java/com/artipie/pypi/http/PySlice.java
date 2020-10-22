@@ -43,6 +43,7 @@ import com.artipie.http.rt.SliceRoute;
 import com.artipie.http.slice.SliceDownload;
 import com.artipie.http.slice.SliceSimple;
 import com.artipie.http.slice.SliceWithHeaders;
+import java.util.regex.Pattern;
 
 /**
  * PyPi HTTP entry point.
@@ -85,9 +86,27 @@ public final class PySlice extends Slice.Wrap {
                     )
                 ),
                 new RtRulePath(
-                    new ByMethodsRule(RqMethod.POST),
+                    new RtRule.All(
+                        new ByMethodsRule(RqMethod.POST),
+                        new RtRule.ByHeader(
+                            "content-type", Pattern.compile("multipart.*", Pattern.CASE_INSENSITIVE)
+                        )
+                    ),
                     new BasicAuthSlice(
                         new WheelSlice(storage),
+                        auth,
+                        new Permission.ByName(perms, Action.Standard.WRITE)
+                    )
+                ),
+                new RtRulePath(
+                    new RtRule.All(
+                        new ByMethodsRule(RqMethod.POST),
+                        new RtRule.ByHeader(
+                            "content-type", Pattern.compile("text.*", Pattern.CASE_INSENSITIVE)
+                        )
+                    ),
+                    new BasicAuthSlice(
+                        new SearchSlice(storage),
                         auth,
                         new Permission.ByName(perms, Action.Standard.WRITE)
                     )
