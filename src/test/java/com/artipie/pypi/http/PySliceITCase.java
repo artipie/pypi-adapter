@@ -43,7 +43,6 @@ import org.hamcrest.core.StringContains;
 import org.hamcrest.text.StringContainsInOrder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
@@ -185,7 +184,6 @@ public final class PySliceITCase {
     }
 
     @Test
-    @Disabled
     void canSearch() throws Exception {
         final Storage storage = new InMemoryStorage();
         this.putPackages(storage);
@@ -199,7 +197,7 @@ public final class PySliceITCase {
                         runtime.localAddress(port)
                     )
                 ),
-                Matchers.stringContainsInOrder("alarmtime", "0.1.5")
+                Matchers.stringContainsInOrder("AlarmTime", "0.1.5")
             );
         }
     }
