@@ -37,11 +37,13 @@ import com.artipie.http.hm.SliceHasResponse;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
-import com.artipie.pypi.meta.PackageInfo;
+import com.artipie.pypi.meta.Metadata;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * Test for {@link SearchSlice}.
@@ -78,21 +80,32 @@ class SearchSliceTest {
         );
     }
 
-    @Test
-    void returnsXmlWithInfoWhenArtifactFound() {
-        new TestResource("pypi_repo/alarmtime-0.1.5.tar.gz")
-            .saveTo(this.storage, new Key.From("alarmtime", "alarmtime-0.1.5.tar.gz"));
+    @ParameterizedTest
+    @CsvSource({
+        "artipie-sample-0.2.tar.gz,artipie-sample",
+        "artipie-sample-2.1.tar.Z,artipie-sample",
+        "artipie-sample-2.1.tar.bz2,artipie-sample",
+        "artipie_sample-2.1-py3.7.egg,artipie-sample",
+        "artipie_sample-0.2-py3-none-any.whl,artipie-sample",
+        "alarmtime-0.1.5.tar.gz,alarmtime",
+        "ABtests-0.0.2.1-py2.py3-none-any.whl,abtests"
+    })
+    void returnsXmlWithInfoWhenArtifactFound(final String pckg, final String name) {
+        final TestResource resource = new TestResource(String.format("pypi_repo/%s", pckg));
+        resource.saveTo(this.storage, new Key.From(name, pckg));
         MatcherAssert.assertThat(
             new SearchSlice(this.storage),
             new SliceHasResponse(
                 Matchers.allOf(
                     new RsHasStatus(RsStatus.OK),
                     new RsHasHeaders(new Header("content-type", "text/xml")),
-                    new RsHasBody(SearchSlice.found(new PackageInfo.FromMetadata(this.metadata())))
+                    new RsHasBody(
+                        SearchSlice.found(new Metadata.FromArchive(resource.asPath()).read())
+                    )
                 ),
                 new RequestLine(RqMethod.POST, "/"),
                 Headers.EMPTY,
-                new Content.From(this.xml("alarmtime").getBytes())
+                new Content.From(this.xml(name).getBytes())
             )
         );
     }
@@ -127,16 +140,4 @@ class SearchSliceTest {
         );
     }
 
-    private String metadata() {
-        // @checkstyle LineLengthCheck (10 line)
-        return String.join(
-            "\n",
-            "Metadata-Version: 2.1",
-            "Name: AlarmTime",
-            "Version: 0.1.5",
-            "Summary: For calculating time difference from current time to Target time and can detect a time from our natural language",
-            "Author: Someone",
-            "Author-email: someone@example.com"
-        );
-    }
 }
