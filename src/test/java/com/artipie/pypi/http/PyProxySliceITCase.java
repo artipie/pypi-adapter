@@ -57,6 +57,7 @@ import org.testcontainers.Testcontainers;
  * @since 0.7
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class PyProxySliceITCase {
 
     /**
