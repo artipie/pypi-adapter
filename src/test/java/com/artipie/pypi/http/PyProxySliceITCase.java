@@ -27,6 +27,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.http.client.Settings;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
@@ -66,7 +67,9 @@ final class PyProxySliceITCase {
     /**
      * Jetty client.
      */
-    private final JettyClientSlices client = new JettyClientSlices();
+    private final JettyClientSlices client = new JettyClientSlices(
+        new Settings.WithFollowRedirects(true)
+    );
 
     /**
      * Server port.
@@ -167,6 +170,26 @@ final class PyProxySliceITCase {
             "Nothing was added to storage",
             this.storage.list(Key.ROOT).join().isEmpty(),
             new IsEqual<>(true)
+        );
+        con.disconnect();
+    }
+
+    @Test
+    void followsRedirects() throws Exception {
+        final HttpURLConnection con = (HttpURLConnection) new URL(
+            String.format("http://localhost:%s/AlarmTime/", this.port)
+        ).openConnection();
+        con.setRequestMethod(RqMethod.GET.value());
+        MatcherAssert.assertThat(
+            "Response status is 200",
+            con.getResponseCode(),
+            new IsEqual<>(Integer.parseInt(RsStatus.OK.code()))
+        );
+        MatcherAssert.assertThat(
+            "Alarm time index page was added to storage",
+            new PublisherAs(this.storage.value(new Key.From("AlarmTime")).join()).asciiString()
+                .toCompletableFuture().join(),
+            new StringContainsInOrder(new ListOf<>("<!DOCTYPE html>", "Links for AlarmTime"))
         );
         con.disconnect();
     }
