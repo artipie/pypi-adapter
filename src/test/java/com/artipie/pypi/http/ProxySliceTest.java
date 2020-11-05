@@ -142,4 +142,32 @@ class ProxySliceTest {
         );
     }
 
+    @ParameterizedTest
+    @CsvSource({
+        "my project versions list in html,My_Project,my-project",
+        "my project wheel,My.Project.whl,My.Project.whl",
+        "John's project tar,Johns.Project.tar.gz,Johns.Project.tar.gz",
+        "Another index,AnotherIndex,anotherindex"
+    })
+    void normalisesNamesWhenNecessary(final String data, final String line, final String key) {
+        final byte[] body = data.getBytes();
+        final Headers.From header = new Headers.From("content-type", "smth");
+        MatcherAssert.assertThat(
+            "Returns body from remote",
+            new ProxySlice(
+                new SliceSimple(new RsFull(RsStatus.OK, header, new Content.From(body))),
+                new FromRemoteCache(this.storage)
+            ),
+            new SliceHasResponse(
+                Matchers.allOf(new RsHasBody(body), new RsHasHeaders(header)),
+                new RequestLine(RqMethod.GET, String.format("/%s", line))
+            )
+        );
+        MatcherAssert.assertThat(
+            "Stores content in cache",
+            new BlockingStorage(this.storage).value(new Key.From(key)),
+            new IsEqual<>(body)
+        );
+    }
+
 }

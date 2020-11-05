@@ -24,8 +24,10 @@
 package com.artipie.pypi.http;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.Key;
 import com.artipie.asto.cache.Cache;
 import com.artipie.asto.cache.CacheControl;
+import com.artipie.asto.ext.KeyLastPart;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -37,7 +39,9 @@ import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.KeyFromPath;
+import com.artipie.pypi.NormalizedProjectName;
 import io.reactivex.Flowable;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -53,6 +57,11 @@ import org.reactivestreams.Publisher;
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class ProxySlice implements Slice {
+
+    /**
+     * Python artifacts formats.
+     */
+    private static final String FORMATS = ".*\\.(whl|tar\\.gz|zip|tar\\.bz2|tar\\.Z|tar|egg)";
 
     /**
      * Origin.
@@ -83,7 +92,7 @@ final class ProxySlice implements Slice {
         final AtomicReference<RsStatus> status = new AtomicReference<>();
         return new AsyncResponse(
             this.cache.load(
-                new KeyFromPath(new RequestLineFrom(line).uri().getPath()),
+                ProxySlice.keyFromPath(line),
                 () -> {
                     final CompletableFuture<Content> promise = new CompletableFuture<>();
                     this.origin.response(line, Headers.EMPTY, Content.EMPTY).send(
@@ -147,12 +156,30 @@ final class ProxySlice implements Slice {
             .findFirst().map(Header::new).orElseGet(
                 () -> {
                     Header res = new Header(name, "text/html");
-                    if (new RequestLineFrom(line).uri().toString()
-                        .matches(".*\\.(whl|tar\\.gz|zip|tar\\.bz2|tar\\.Z|tar|egg)")) {
+                    if (new RequestLineFrom(line).uri().toString().matches(ProxySlice.FORMATS)) {
                         res = new Header(name, "multipart/form-data");
                     }
                     return res;
                 }
             );
+    }
+
+    /**
+     * Obtains key from request line with names normalization.
+     * @param line Request line
+     * @return Instance of {@link Key}.
+     */
+    private static Key keyFromPath(final String line) {
+        final URI uri = new RequestLineFrom(line).uri();
+        Key res = new KeyFromPath(uri.getPath());
+        if (!uri.toString().matches(ProxySlice.FORMATS)) {
+            final String last = new KeyLastPart(res).get();
+            res = new Key.From(
+                res.string().replaceAll(
+                    String.format("%s$", last), new NormalizedProjectName.Simple(last).value()
+                )
+            );
+        }
+        return res;
     }
 }
