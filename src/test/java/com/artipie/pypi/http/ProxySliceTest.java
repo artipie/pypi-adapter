@@ -144,13 +144,13 @@ class ProxySliceTest {
 
     @ParameterizedTest
     @CsvSource({
-        "my project versions list in html,My_Project,my-project",
-        "my project wheel,My.Project.whl,My.Project.whl",
-        "John's project tar,Johns.Project.tar.gz,Johns.Project.tar.gz",
-        "Another index,AnotherIndex,anotherindex"
+        "My_Project,my-project",
+        "My.Project.whl,My.Project.whl",
+        "Johns.Project.tar.gz,Johns.Project.tar.gz",
+        "AnotherIndex,anotherindex"
     })
-    void normalisesNamesWhenNecessary(final String data, final String line, final String key) {
-        final byte[] body = data.getBytes();
+    void normalisesNamesWhenNecessary(final String line, final String key) {
+        final byte[] body = "python artifact".getBytes();
         final Headers.From header = new Headers.From("content-type", "smth");
         MatcherAssert.assertThat(
             "Returns body from remote",
