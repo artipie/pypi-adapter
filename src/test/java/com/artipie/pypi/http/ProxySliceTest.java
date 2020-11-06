@@ -93,8 +93,8 @@ class ProxySliceTest {
 
     @ParameterizedTest
     @CsvSource({
-        "my project versions list in html,text/html,my_project",
-        "my project wheel,multipart/form-data,my_project.whl"
+        "my project versions list in html,text/html,my-project",
+        "my project wheel,multipart/form-data,my-project.whl"
     })
     void getsFromCacheOnError(final String data, final String header, final String key) {
         final byte[] body = data.getBytes();
@@ -139,6 +139,34 @@ class ProxySliceTest {
             "Cache storage is empty",
             this.storage.list(Key.ROOT).join().isEmpty(),
             new IsEqual<>(true)
+        );
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "My_Project,my-project",
+        "My.Project.whl,My.Project.whl",
+        "Johns.Project.tar.gz,Johns.Project.tar.gz",
+        "AnotherIndex,anotherindex"
+    })
+    void normalisesNamesWhenNecessary(final String line, final String key) {
+        final byte[] body = "python artifact".getBytes();
+        final Headers.From header = new Headers.From("content-type", "smth");
+        MatcherAssert.assertThat(
+            "Returns body from remote",
+            new ProxySlice(
+                new SliceSimple(new RsFull(RsStatus.OK, header, new Content.From(body))),
+                new FromRemoteCache(this.storage)
+            ),
+            new SliceHasResponse(
+                Matchers.allOf(new RsHasBody(body), new RsHasHeaders(header)),
+                new RequestLine(RqMethod.GET, String.format("/%s", line))
+            )
+        );
+        MatcherAssert.assertThat(
+            "Stores content in cache",
+            new BlockingStorage(this.storage).value(new Key.From(key)),
+            new IsEqual<>(body)
         );
     }
 
