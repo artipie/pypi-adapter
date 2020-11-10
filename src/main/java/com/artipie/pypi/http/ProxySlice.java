@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.cache.Cache;
 import com.artipie.asto.cache.CacheControl;
+import com.artipie.asto.cache.Remote;
 import com.artipie.asto.ext.KeyLastPart;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
@@ -36,7 +37,6 @@ import com.artipie.http.headers.Header;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
-import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.KeyFromPath;
 import com.artipie.pypi.NormalizedProjectName;
@@ -44,6 +44,7 @@ import io.reactivex.Flowable;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -89,53 +90,45 @@ final class ProxySlice implements Slice {
         final Publisher<ByteBuffer> pub
     ) {
         final AtomicReference<Headers> headers = new AtomicReference<>();
-        final AtomicReference<RsStatus> status = new AtomicReference<>();
         return new AsyncResponse(
             this.cache.load(
                 ProxySlice.keyFromPath(line),
-                () -> {
-                    final CompletableFuture<Content> promise = new CompletableFuture<>();
-                    this.origin.response(line, Headers.EMPTY, Content.EMPTY).send(
-                        (rsstatus, rsheaders, rsbody) -> {
-                            final CompletableFuture<Void> term = new CompletableFuture<>();
-                            headers.set(rsheaders);
-                            status.set(rsstatus);
-                            if (rsstatus.success()) {
-                                final Flowable<ByteBuffer> body = Flowable.fromPublisher(rsbody)
-                                    .doOnError(term::completeExceptionally)
-                                    .doOnTerminate(() -> term.complete(null));
-                                promise.complete(new Content.From(body));
-                            } else {
-                                promise.completeExceptionally(
-                                    new IllegalStateException(
-                                        String.format(
-                                            "Unsuccessful response code %s received",
-                                            rsstatus.code()
-                                        )
-                                    )
-                                );
+                new Remote.WithErrorHandling(
+                    () -> {
+                        final CompletableFuture<Optional<? extends Content>> promise =
+                            new CompletableFuture<>();
+                        this.origin.response(line, Headers.EMPTY, Content.EMPTY).send(
+                            (rsstatus, rsheaders, rsbody) -> {
+                                final CompletableFuture<Void> term = new CompletableFuture<>();
+                                headers.set(rsheaders);
+                                if (rsstatus.success()) {
+                                    final Flowable<ByteBuffer> body = Flowable.fromPublisher(rsbody)
+                                        .doOnError(term::completeExceptionally)
+                                        .doOnTerminate(() -> term.complete(null));
+                                    promise.complete(Optional.of(new Content.From(body)));
+                                } else {
+                                    promise.complete(Optional.empty());
+                                }
+                                return term;
                             }
-                            return term;
-                        }
-                    );
-                    return promise;
-                },
+                        );
+                        return promise;
+                    }
+                ),
                 CacheControl.Standard.ALWAYS
             ).handle(
                 (content, throwable) -> {
                     final CompletableFuture<Response> result = new CompletableFuture<>();
-                    if (throwable == null) {
+                    if (throwable == null && content.isPresent()) {
                         result.complete(
                             new RsFull(
                                 RsStatus.OK,
                                 new Headers.From(ProxySlice.contentType(headers.get(), line)),
-                                content
+                                content.get()
                             )
                         );
                     } else {
-                        result.complete(
-                            new RsWithHeaders(new RsWithStatus(status.get()), headers.get())
-                        );
+                        result.complete(new RsWithStatus(RsStatus.NOT_FOUND));
                     }
                     return result;
                 }
