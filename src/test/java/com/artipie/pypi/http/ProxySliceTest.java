@@ -24,6 +24,7 @@
 package com.artipie.pypi.http;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.blocking.BlockingStorage;
@@ -39,7 +40,6 @@ import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
-import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.SliceSimple;
 import org.hamcrest.MatcherAssert;
@@ -121,17 +121,15 @@ class ProxySliceTest {
     }
 
     @Test
-    void proxiesStatusAndHeaderFromRemoteOnError() {
-        final RsStatus status = RsStatus.BAD_REQUEST;
-        final Headers.From header = new Headers.From("x-key", "value");
+    void returnsNotFoundWhenRemoteReturnedBadRequest() {
         MatcherAssert.assertThat(
             "Status 400 returned",
             new ProxySlice(
-                new SliceSimple(new RsWithHeaders(new RsWithStatus(status), header)),
+                new SliceSimple(new RsWithStatus(RsStatus.BAD_REQUEST)),
                 new FromRemoteCache(this.storage)
             ),
             new SliceHasResponse(
-                Matchers.allOf(new RsHasStatus(status), new RsHasHeaders(header)),
+                new RsHasStatus(RsStatus.NOT_FOUND),
                 new RequestLine(RqMethod.GET, "/any")
             )
         );
@@ -167,6 +165,29 @@ class ProxySliceTest {
             "Stores content in cache",
             new BlockingStorage(this.storage).value(new Key.From(key)),
             new IsEqual<>(body)
+        );
+    }
+
+    @Test
+    void returnsNotFoundOnRemoteAndCacheError() {
+        MatcherAssert.assertThat(
+            "Status 400 returned",
+            new ProxySlice(
+                new SliceSimple(new RsWithStatus(RsStatus.BAD_REQUEST)),
+                (key, remote, cache) ->
+                    new FailedCompletionStage<>(
+                        new IllegalStateException("Failed to obtain item from cache")
+                    )
+            ),
+            new SliceHasResponse(
+                new RsHasStatus(RsStatus.NOT_FOUND),
+                new RequestLine(RqMethod.GET, "/anything")
+            )
+        );
+        MatcherAssert.assertThat(
+            "Cache storage is empty",
+            this.storage.list(Key.ROOT).join().isEmpty(),
+            new IsEqual<>(true)
         );
     }
 
