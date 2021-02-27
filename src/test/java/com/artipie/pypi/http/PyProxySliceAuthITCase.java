@@ -28,7 +28,7 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.test.TestResource;
 import com.artipie.http.auth.Authentication;
-import com.artipie.http.client.auth.Authenticator;
+import com.artipie.http.client.auth.BasicAuthenticator;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.slice.LoggingSlice;
 import com.artipie.pypi.PypiContainer;
@@ -101,7 +101,7 @@ class PyProxySliceAuthITCase {
                 new PyProxySlice(
                     this.client,
                     URI.create(String.format("http://localhost:%d", this.origin.start())),
-                    new Authenticator.Basic(bob, pswd),
+                    new BasicAuthenticator(bob, pswd),
                     new InMemoryStorage()
                 )
             )
