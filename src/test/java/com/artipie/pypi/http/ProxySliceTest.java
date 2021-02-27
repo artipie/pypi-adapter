@@ -54,9 +54,8 @@ import org.junit.jupiter.params.provider.CsvSource;
  * Test for {@link ProxySlice}.
  * @since 0.7
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
- * @checkstyle ParameterNumberCheck (500 lines)
  */
-@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.UseObjectForClearerAPI"})
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class ProxySliceTest {
 
     /**
@@ -104,11 +103,10 @@ class ProxySliceTest {
 
     @ParameterizedTest
     @CsvSource({
-        "my project versions list in html,text/html,my-project,32",
-        "my project wheel,multipart/form-data,my-project.whl,16"
+        "my project versions list in html,text/html,my-project",
+        "my project wheel,multipart/form-data,my-project.whl"
     })
-    void getsFromCacheOnError(final String data, final String header, final String key,
-        final String size) {
+    void getsFromCacheOnError(final String data, final String header, final String key) {
         final byte[] body = data.getBytes();
         this.storage.save(new Key.From(key), new Content.From(body)).join();
         MatcherAssert.assertThat(
@@ -122,7 +120,7 @@ class ProxySliceTest {
                     new RsHasStatus(RsStatus.OK), new RsHasBody(body),
                     new RsHasHeaders(
                         new MapEntry<>("content-type", header),
-                        new MapEntry<>("Content-Length", size)
+                        new MapEntry<>("Content-Length", String.valueOf(body.length))
                     )
                 ),
                 new RequestLine(RqMethod.GET, String.format("/%s", key))
@@ -180,7 +178,7 @@ class ProxySliceTest {
                     new RsHasBody(body),
                     new RsHasHeaders(
                         new MapEntry<>("content-type", "smth"),
-                        new MapEntry<>("Content-Length", "15")
+                        new MapEntry<>("Content-Length", String.valueOf(body.length))
                     )
                 ),
                 new RequestLine(RqMethod.GET, String.format("/%s", line))
