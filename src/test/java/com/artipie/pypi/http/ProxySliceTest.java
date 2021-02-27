@@ -31,7 +31,6 @@ import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.cache.FromRemoteCache;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.http.Headers;
-import com.artipie.http.headers.Header;
 import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
@@ -42,6 +41,7 @@ import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.slice.SliceSimple;
+import org.cactoos.map.MapEntry;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -54,8 +54,9 @@ import org.junit.jupiter.params.provider.CsvSource;
  * Test for {@link ProxySlice}.
  * @since 0.7
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle ParameterNumberCheck (500 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.AvoidDuplicateLiterals", "PMD.UseObjectForClearerAPI"})
 class ProxySliceTest {
 
     /**
@@ -72,15 +73,25 @@ class ProxySliceTest {
     void getsContentFromRemoteAndAdsItToCache() {
         final byte[] body = "some html".getBytes();
         final String key = "index";
-        final Headers.From header = new Headers.From("content-type", "smth");
         MatcherAssert.assertThat(
             "Returns body from remote",
             new ProxySlice(
-                new SliceSimple(new RsFull(RsStatus.OK, header, new Content.From(body))),
+                new SliceSimple(
+                    new RsFull(
+                        RsStatus.OK, new Headers.From("content-type", "smth"),
+                        new Content.From(body)
+                    )
+                ),
                 new FromRemoteCache(this.storage)
             ),
             new SliceHasResponse(
-                Matchers.allOf(new RsHasBody(body), new RsHasHeaders(header)),
+                Matchers.allOf(
+                    new RsHasBody(body),
+                    new RsHasHeaders(
+                        new MapEntry<>("content-type", "smth"),
+                        new MapEntry<>("Content-Length", "9")
+                    )
+                ),
                 new RequestLine(RqMethod.GET, String.format("/%s", key))
             )
         );
@@ -93,10 +104,11 @@ class ProxySliceTest {
 
     @ParameterizedTest
     @CsvSource({
-        "my project versions list in html,text/html,my-project",
-        "my project wheel,multipart/form-data,my-project.whl"
+        "my project versions list in html,text/html,my-project,32",
+        "my project wheel,multipart/form-data,my-project.whl,16"
     })
-    void getsFromCacheOnError(final String data, final String header, final String key) {
+    void getsFromCacheOnError(final String data, final String header, final String key,
+        final String size) {
         final byte[] body = data.getBytes();
         this.storage.save(new Key.From(key), new Content.From(body)).join();
         MatcherAssert.assertThat(
@@ -108,7 +120,10 @@ class ProxySliceTest {
             new SliceHasResponse(
                 Matchers.allOf(
                     new RsHasStatus(RsStatus.OK), new RsHasBody(body),
-                    new RsHasHeaders(new Header("content-type", header))
+                    new RsHasHeaders(
+                        new MapEntry<>("content-type", header),
+                        new MapEntry<>("Content-Length", size)
+                    )
                 ),
                 new RequestLine(RqMethod.GET, String.format("/%s", key))
             )
@@ -149,15 +164,25 @@ class ProxySliceTest {
     })
     void normalisesNamesWhenNecessary(final String line, final String key) {
         final byte[] body = "python artifact".getBytes();
-        final Headers.From header = new Headers.From("content-type", "smth");
         MatcherAssert.assertThat(
             "Returns body from remote",
             new ProxySlice(
-                new SliceSimple(new RsFull(RsStatus.OK, header, new Content.From(body))),
+                new SliceSimple(
+                    new RsFull(
+                        RsStatus.OK, new Headers.From("content-type", "smth"),
+                        new Content.From(body)
+                    )
+                ),
                 new FromRemoteCache(this.storage)
             ),
             new SliceHasResponse(
-                Matchers.allOf(new RsHasBody(body), new RsHasHeaders(header)),
+                Matchers.allOf(
+                    new RsHasBody(body),
+                    new RsHasHeaders(
+                        new MapEntry<>("content-type", "smth"),
+                        new MapEntry<>("Content-Length", "15")
+                    )
+                ),
                 new RequestLine(RqMethod.GET, String.format("/%s", line))
             )
         );

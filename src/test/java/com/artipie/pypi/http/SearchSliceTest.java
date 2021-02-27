@@ -29,7 +29,6 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.test.TestResource;
 import com.artipie.http.Headers;
-import com.artipie.http.headers.Header;
 import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
@@ -38,6 +37,7 @@ import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.pypi.meta.Metadata;
+import org.cactoos.map.MapEntry;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,7 +70,10 @@ class SearchSliceTest {
             new SliceHasResponse(
                 Matchers.allOf(
                     new RsHasStatus(RsStatus.OK),
-                    new RsHasHeaders(new Header("content-type", "text/xml")),
+                    new RsHasHeaders(
+                        new MapEntry<>("content-type", "text/xml"),
+                        new MapEntry<>("content-length", "115")
+                    ),
                     new RsHasBody(SearchSlice.empty())
                 ),
                 new RequestLine(RqMethod.POST, "/"),
@@ -93,15 +96,17 @@ class SearchSliceTest {
     void returnsXmlWithInfoWhenArtifactFound(final String pckg, final String name) {
         final TestResource resource = new TestResource(String.format("pypi_repo/%s", pckg));
         resource.saveTo(this.storage, new Key.From(name, pckg));
+        final byte[] body = SearchSlice.found(new Metadata.FromArchive(resource.asPath()).read());
         MatcherAssert.assertThat(
             new SearchSlice(this.storage),
             new SliceHasResponse(
                 Matchers.allOf(
                     new RsHasStatus(RsStatus.OK),
-                    new RsHasHeaders(new Header("content-type", "text/xml")),
-                    new RsHasBody(
-                        SearchSlice.found(new Metadata.FromArchive(resource.asPath()).read())
-                    )
+                    new RsHasHeaders(
+                        new MapEntry<>("content-type", "text/xml"),
+                        new MapEntry<>("content-length", String.valueOf(body.length))
+                    ),
+                    new RsHasBody(body)
                 ),
                 new RequestLine(RqMethod.POST, "/"),
                 Headers.EMPTY,
