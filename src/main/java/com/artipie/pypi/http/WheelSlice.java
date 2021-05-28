@@ -10,12 +10,14 @@ import com.artipie.asto.Copy;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
+import com.artipie.http.ArtipieHttpException;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.rs.common.RsError;
 import com.artipie.http.slice.KeyFromPath;
 import com.artipie.pypi.NormalizedProjectName;
 import com.artipie.pypi.meta.Metadata;
@@ -96,7 +98,9 @@ final class WheelSlice implements Slice {
                 (ignored, throwable) -> {
                     Response res = new RsWithStatus(RsStatus.CREATED);
                     if (throwable != null) {
-                        res = new RsWithStatus(RsStatus.BAD_REQUEST);
+                        res = new RsError(
+                            new ArtipieHttpException(RsStatus.BAD_REQUEST, throwable)
+                        );
                     }
                     FileUtils.deleteQuietly(path.toFile());
                     return res;
