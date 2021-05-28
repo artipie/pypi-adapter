@@ -10,13 +10,14 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.fs.FileStorage;
+import com.artipie.http.ArtipieHttpException;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
-import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.rs.common.RsError;
 import com.artipie.pypi.NormalizedProjectName;
 import com.artipie.pypi.meta.Metadata;
 import com.artipie.pypi.meta.PackageInfo;
@@ -91,7 +92,9 @@ public final class SearchSlice implements Slice {
                             RsStatus.OK, new Headers.From("content-type", "text/xml"), content
                         );
                     } else {
-                        res = new RsWithStatus(RsStatus.INTERNAL_ERROR);
+                        res = new RsError(
+                            new ArtipieHttpException(RsStatus.INTERNAL_ERROR, throwable)
+                        );
                     }
                     FileUtils.deleteQuietly(temp.toFile());
                     return res;
