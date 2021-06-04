@@ -59,7 +59,7 @@ SOFTWARE.
     <url>https://github.com/artipie/pypi-adapter/tree/master</url>
   </scm>
   <properties>
-    <apache.httpcomponents.version>4.5.12</apache.httpcomponents.version>
+    <apache.httpcomponents.version>4.5.13</apache.httpcomponents.version>
     <qulice.license>${project.basedir}/LICENSE.header</qulice.license>
   </properties>
   <dependencies>
